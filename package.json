@@ -1,0 +1,20 @@
+{
+  "name": "as3ToTypescript",
+  "version": "0.1.0",
+  "description": "convert as3 code base to typescript",
+  "main": "index.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "keywords": [
+    "actionscript",
+    "as3",
+    "typescript",
+    "crosscompiler"
+  ],
+  "author": "François de Campredon",
+  "license": "Apache Licence V2",
+  "dependencies": {
+    "sax": "~0.6.0"
+  }
+}
