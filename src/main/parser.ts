@@ -399,10 +399,13 @@ class AS3Parser {
         if (metadataList == null || metadataList.length === 0) {
             return null;
         }
-
+        
         var result: Node = new Node(NodeKind.META_LIST, this.tok.index,  -1);
-        result.children = metadataList || metadataList.slice(0);
+        result.children = metadataList ? metadataList.slice(0): [];
         result.end = result.lastChild && result.lastChild.end;
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, result.start);
         return result;
     }
 
@@ -419,6 +422,9 @@ class AS3Parser {
             return new Node(NodeKind.MODIFIER, tok.index, end, tok.text)
         })
         result.end = end;
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, result.start);
         return result;
     }
 
