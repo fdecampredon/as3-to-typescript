@@ -34,10 +34,7 @@ import Token = require('./token');
 import NodeKind = require('./nodeKind');
 import Operators = require('./operators');
 import KeyWords = require('./keywords');
-import node = require('./node');
-import IParserNode = node.IParserNode;
-import Node = node.Node;
-import StringBuffer = require('./stringBuffer');
+import Node = require('./node');
 
 
 var ASDOC_COMMENT: string = "/**";
@@ -80,22 +77,15 @@ class AS3Parser {
         this.isInFor = false;
     }
 
-
     /*
      * (non-Javadoc)
      * @see com.adobe.ac.pmd.parser.IAS3Parser#buildAst(java.lang.String,
      * java.lang.String[])
      */
-    public buildAst(filePath: string, scriptBlockLines: string[]): IParserNode {
-        return this.parseLines(filePath, scriptBlockLines);
+    public buildAst(filePath: string, content: string): Node {
+        return this.parseFile(filePath, content);
     }
 
-    /**
-     * @return
-     */
-    private getScn(): AS3Scanner {
-        return this.scn;
-    }
 
     private nextToken(ignoreDocumentation: boolean= false): void {
          do {
@@ -106,7 +96,7 @@ class AS3Parser {
                 this.nextTokenAllowNewLine();
             }
         }
-        while (this.tok.getText() === NEW_LINE);
+        while (this.tok.text === NEW_LINE);
     }
 
 
@@ -116,15 +106,13 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseClassContent(): Node {
-        var result: Node = Node.create(NodeKind.CONTENT,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.CONTENT, this.tok.index, -1);
         var modifiers: Token [] = [];
         var meta: Node[] = [];
 
         while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
             if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
-                result.addChild(this.parseBlock());
+                result.children.push(this.parseBlock());
             }
             if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
                 meta.push(this.parseMetaData());
@@ -136,7 +124,7 @@ class AS3Parser {
                 this.parseClassConstant(result, modifiers, meta);
             }
             else if (this.tokIs(KeyWords.IMPORT)) {
-                result.addChild(this.parseImport());
+                result.children.push(this.parseImport());
             }
             else if (this.tokIs(KeyWords.FUNCTION)) {
                 this.parseClassFunctions(result, modifiers,  meta);
@@ -145,6 +133,7 @@ class AS3Parser {
                 this.tryToParseCommentNode(result, modifiers);
             }
         }
+        result.end = result.lastChild && result.lastChild.end;
         return result;
     }
 
@@ -154,13 +143,13 @@ class AS3Parser {
      * @throws UnExpectedTokenException
      */
     private parseCompilationUnit(): Node {
-        var result: Node = Node.create(NodeKind.COMPILATION_UNIT, -1, -1);
+        var result: Node = new Node(NodeKind.COMPILATION_UNIT, -1, -1);
 
         this.nextTokenIgnoringDocumentation();
         if (this.tokIs(KeyWords.PACKAGE)) {
-            result.addChild(this.parsePackage());
+            result.children.push(this.parsePackage());
         }
-        result.addChild(this.parsePackageContent());
+        result.children.push(this.parsePackageContent());
         return result;
     }
 
@@ -168,7 +157,7 @@ class AS3Parser {
      * @return
      * @throws TokenException
      */
-    private parseExpression(): IParserNode {
+    private parseExpression(): Node {
         return this.parseAssignmentExpression();
     }
 
@@ -178,19 +167,17 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseInterfaceContent(): Node {
-        var result: Node = Node.create(NodeKind.CONTENT,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.CONTENT, this.tok.index, -1);
+        
         while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
             if (this.tokIs(KeyWords.IMPORT)) {
-                result.addChild(this.parseImport());
+                result.children.push(this.parseImport());
             }
             else if (this.tokIs(KeyWords.FUNCTION)) {
-                result.addChild(this.parseFunctionSignature());
+                result.children.push(this.parseFunctionSignature());
             }
-            else if (this.tokIs(KeyWords.INCLUDE)
-                || this.tokIs(KeyWords.INCLUDE_AS2)) {
-                result.addChild(this.parseIncludeExpression());
+            else if (this.tokIs(KeyWords.INCLUDE) || this.tokIs(KeyWords.INCLUDE_AS2)) {
+                result.children.push(this.parseIncludeExpression());
             }
             else if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
                 while (!this.tokIs(Operators.RIGHT_SQUARE_BRACKET)) {
@@ -202,6 +189,7 @@ class AS3Parser {
                 this.tryToParseCommentNode(result, null);
             }
         }
+        result.end = result.lastChild && result.lastChild.end;
         return result;
     }
 
@@ -211,51 +199,41 @@ class AS3Parser {
      * @throws UnExpectedTokenException
      */
     private parsePackageContent(): Node {
-        var result: Node = Node.create(NodeKind.CONTENT,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.CONTENT, this.tok.index, -1);
         var modifiers: Token [] = [];
         var meta: Node [] = [];
 
-        while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET)
-            && !this.tokIs(KeyWords.EOF)) {
+        while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET) && !this.tokIs(KeyWords.EOF)) {
             if (this.tokIs(KeyWords.IMPORT)) {
-                result.addChild(this.parseImport());
+                result.children.push(this.parseImport());
             }
             else if (this.tokIs(KeyWords.USE)) {
-                result.addChild(this.parseUse());
+                result.children.push(this.parseUse());
             }
             else if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
                 meta.push(this.parseMetaData());
             }
             else if (this.tokIs(KeyWords.CLASS)) {
-                result.addChild(this.parseClass(meta,  modifiers));
-
+                result.children.push(this.parseClass(meta,  modifiers));
                 modifiers.length = 0;
                 meta.length = 0;
             }
             else if (this.tokIs(KeyWords.INTERFACE)) {
-                result.addChild(this.parseInterface(meta, modifiers));
+                result.children.push(this.parseInterface(meta, modifiers));
                 modifiers.length = 0;
                 meta.length = 0;
             }
             else if (this.tokIs(KeyWords.FUNCTION)) {
                 this.parseClassFunctions(result, modifiers, meta);
             }
-            else if (startsWith(this.tok.getText(), ASDOC_COMMENT)) {
-                this.currentAsDoc = Node.create(NodeKind.AS_DOC,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.tok.getText());
+            else if (startsWith(this.tok.text, ASDOC_COMMENT)) {
+                this.currentAsDoc = new Node(NodeKind.AS_DOC, this.tok.index, 
+                    this.tok.index + this.tok.index -1, this.tok.text);
                 this.nextToken();
             }
-            else if (startsWith(this.tok.getText(), MULTIPLE_LINES_COMMENT)) {
-                this.currentMultiLineComment = Node.create(NodeKind.MULTI_LINE_COMMENT,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.tok.getText());
+            else if (startsWith(this.tok.text, MULTIPLE_LINES_COMMENT)) {
+                this.currentMultiLineComment = new Node(NodeKind.MULTI_LINE_COMMENT, this.tok.index, 
+                    this.tok.index + this.tok.index -1, this.tok.text);
                 this.nextToken();
             }
             else {
@@ -263,6 +241,7 @@ class AS3Parser {
                 this.nextTokenIgnoringDocumentation();
             }
         }
+        result.end = result.lastChild && result.lastChild.end;
         return result;
     }
 
@@ -271,30 +250,27 @@ class AS3Parser {
      * @throws TokenException
      */
     private parsePrimaryExpression(): Node {
-        var result: Node = Node.create(NodeKind.PRIMARY,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.tok.getText());
+        var result: Node = new Node(NodeKind.PRIMARY, this.tok.index, -1, this.tok.text);
 
         if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
-            result.addChild(this.parseArrayLiteral());
+            result.children.push(this.parseArrayLiteral());
         }
         else if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
-            result.addChild(this.parseObjectLiteral());
+            result.children.push(this.parseObjectLiteral());
         }
         else if (this.tokIs(KeyWords.FUNCTION)) {
-            result.addChild(this.parseLambdaExpression());
+            result.children.push(this.parseLambdaExpression());
         }
         else if (this.tokIs(KeyWords.NEW)) {
-            result = this.parseNewExpression();
+            return this.parseNewExpression();
         }
         else if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
-            result.addChild(this.parseEncapsulatedExpression());
+            result.children.push(this.parseEncapsulatedExpression());
         }
         else {
             this.nextToken(true);
         }
+        result.end = result.lastChild && result.lastChild.end;
         return result;
     }
 
@@ -303,8 +279,8 @@ class AS3Parser {
      * 
      * @throws TokenException
      */
-    private parseStatement(): IParserNode {
-        var result: IParserNode;
+    private parseStatement(): Node {
+        var result: Node;
 
         if (this.tokIs(KeyWords.FOR)) {
             result = this.parseFor();
@@ -357,47 +333,35 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseUnaryExpression(): Node {
-        var result: Node;
+        var result: Node, 
+            index = this.tok.index;
         if (this.tokIs(Operators.INCREMENT)) {
             this.nextToken();
-            result = Node.create(NodeKind.PRE_INC,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseUnaryExpression());
+            result = new Node(NodeKind.PRE_INC, this.tok.index, index, null,  [this.parseUnaryExpression()]);
         }
         else if (this.tokIs(Operators.DECREMENT)) {
             this.nextToken();
-            result = Node.create(NodeKind.PRE_DEC,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseUnaryExpression());
+            result = new Node(NodeKind.PRE_DEC, this.tok.index, index, null, [this.parseUnaryExpression()]);
         }
         else if (this.tokIs(Operators.MINUS)) {
             this.nextToken();
-            result = Node.create(NodeKind.MINUS,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseUnaryExpression());
+            result = new Node(NodeKind.MINUS, this.tok.index, index, null, [this.parseUnaryExpression()]);
         }
-        else if (this.tokIs(Operators.PLUS)
-            || this.tokIs(Operators.PLUS_AS2)) {
+        else if (this.tokIs(Operators.PLUS) || this.tokIs(Operators.PLUS_AS2)) {
             this.nextToken();
-            result = Node.create(NodeKind.PLUS,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseUnaryExpression());
+            result = new Node(NodeKind.PLUS, this.tok.index, index, null, [this.parseUnaryExpression()]);
         }
         else {
-            result = this.parseUnaryExpressionNotPlusMinus();
+            return this.parseUnaryExpressionNotPlusMinus();
         }
         return result;
     }
 
-    private collectVarListContent(result: Node): IParserNode {
-        result.addChild(this.parseNameTypeInit());
+    private collectVarListContent(result: Node): Node {
+        result.children.push(this.parseNameTypeInit());
         while (this.tokIs(Operators.COMMA)) {
             this.nextToken(true);
-            result.addChild(this.parseNameTypeInit());
+            result.children.push(this.parseNameTypeInit());
         }
         return result;
     }
@@ -410,23 +374,25 @@ class AS3Parser {
      * @param text
      * @throws UnExpectedTokenException
      */
-    consume(text: string): void {
-        while (startsWith(this.tok.getText(), "//")) {
+    consume(text: string): Token {
+        while (startsWith(this.tok.text, "//")) {
             this.nextToken();
         }
 
         if (!this.tokIs(text)) {
-            /*throw new UnExpectedTokenException(this.tok.getText(),
-                new Position(this.tok.getLine(), this.tok.getColumn()),
+            /*throw new UnExpectedTokenException(this.tok.text,
+                new Position(this.tok.index, this.tok.getColumn()),
                 fileName,
                 text);*/
             throw new Error('unexpected token : ' +
-                this.tok.getText() + '(' + this.tok.getLine()+ ',' + this.tok.getColumn() + ')'+
+                this.tok.text + '(' + this.tok.index + ')'+
                 ' in file '+ this.fileName + 
                 'expected: ' + text
             );
         }
+        var result = this.tok;
         this.nextToken();
+        return result;
     }
 
     private convertMeta(metadataList: Node []): Node {
@@ -434,14 +400,10 @@ class AS3Parser {
             return null;
         }
 
-        var result: Node = Node.create(NodeKind.META_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
-
-        metadataList.forEach((metadataNode) => {
-            result.addChild(metadataNode);
-        })
-      return result;
+        var result: Node = new Node(NodeKind.META_LIST, this.tok.index,  -1);
+        result.children = metadataList || metadataList.slice(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result;
     }
 
     private convertModifiers(modifierList: Token []): Node {
@@ -449,62 +411,39 @@ class AS3Parser {
             return null;
         }
 
-        var result: Node = Node.create(NodeKind.MOD_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.MOD_LIST, this.tok.index, -1);
 
-        modifierList.forEach(modifierToken => {
-            result.addChild(
-                Node.create(
-                    NodeKind.MODIFIER,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    modifierToken.getText()
-                )
-            )
+        var end = this.tok.index;
+        result.children = modifierList.map(tok => {
+            end = tok.index + tok.text.length;
+            return new Node(NodeKind.MODIFIER, tok.index, end, tok.text)
         })
-      return result;
+        result.end = end;
+        return result;
     }
 
     private doParseSignature(): Node[] {
-       this. consume(KeyWords.FUNCTION);
-
-        var type: Node = Node.create(
-            NodeKind.TYPE,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            KeyWords.FUNCTION.toString()
-        );
-        if (this.tokIs(KeyWords.SET)
-            || this.tokIs(KeyWords.GET)) {
-            type = Node.create(NodeKind.TYPE,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText());
+        var tok = this.consume(KeyWords.FUNCTION);
+        var type: Node = new Node(NodeKind.TYPE, tok.index, tok.end, KeyWords.FUNCTION);
+        if (this.tokIs(KeyWords.SET) || this.tokIs(KeyWords.GET)) {
+            type = new Node(NodeKind.TYPE, tok.index, this.tok.end, this.tok.text);
             this.nextToken(); // set or get
         }
-        var name: Node = Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.tok.getText());
+        var name: Node = new Node(NodeKind.NAME, this.tok.index, this.tok.end, this.tok.text);
         this.nextToken(); // name
         var params: Node = this.parseParameterList();
         var returnType: Node = this.parseOptionalType();
-        return [type,  name, params, returnType];
+        return [type, name, params, returnType];
     }
 
     private findFunctionTypeFromSignature(signature: Node[]): string {
         for (var i = 0; i < signature.length; i++) {
             var node = signature[i];
-            if (node.is(NodeKind.TYPE)) {
-                if (node.getStringValue() === "set") {
+            if (node.kind === NodeKind.TYPE) {
+                if (node.text === "set") {
                     return NodeKind.SET;
                 }
-                if (node.getStringValue() === "get") {
+                if (node.text === "get") {
                     return NodeKind.GET;
                 }
                 return NodeKind.FUNCTION;
@@ -527,87 +466,68 @@ class AS3Parser {
                 throw new Error(this.fileName)//TODO NullTokenException(fileName);
 
             }
-            if (this.tok.getText() == null) {
+            if (this.tok.text == null) {
                  throw new Error(this.fileName)//TODO throw new NullTokenException(fileName);
             }
         }
-        while (startsWith(this.tok.getText(), SINGLE_LINE_COMMENT));
+        while (startsWith(this.tok.text, SINGLE_LINE_COMMENT));
     }
 
     private nextTokenIgnoringDocumentation(): void {
         do {
             this.nextToken();
         }
-        while (startsWith(this.tok.getText(), MULTIPLE_LINES_COMMENT));
+        while (startsWith(this.tok.text, MULTIPLE_LINES_COMMENT));
     }
 
-    private parseAdditiveExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.ADD,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseMultiplicativeExpression());
-        while (this.tokIs(Operators.PLUS)
-            || this.tokIs(Operators.PLUS_AS2) || this.tokIs(Operators.MINUS)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+    private parseAdditiveExpression(): Node {
+        var result: Node = new Node(NodeKind.ADD, this.tok.index, this.tok.end, null, [this.parseMultiplicativeExpression()]);
+        while (this.tokIs(Operators.PLUS) || this.tokIs(Operators.PLUS_AS2) || this.tokIs(Operators.MINUS)) {
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseMultiplicativeExpression());
+            result.children.push(this.parseMultiplicativeExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
     // ------------------------------------------------------------------------
     // language specific recursive descent parsing
     // ------------------------------------------------------------------------
 
-    private parseAndExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.AND,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseBitwiseOrExpression());
-        while (this.tokIs(Operators.AND)
-            || this.tokIs(Operators.AND_AS2)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+    private parseAndExpression(): Node {
+        var result: Node = new Node(NodeKind.AND, this.tok.index, this.tok.end , null, [this.parseBitwiseOrExpression()]);
+        while (this.tokIs(Operators.AND) || this.tokIs(Operators.AND_AS2)) {
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseBitwiseOrExpression());
+            result.children.push(this.parseBitwiseOrExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
     /**
      * tok is ( exit tok is first token after )
      */
     private parseArgumentList(): Node {
-       this. consume(Operators.LEFT_PARENTHESIS);
-        var result: Node = Node.create(NodeKind.ARGUMENTS,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var tok = this.consume(Operators.LEFT_PARENTHESIS);
+        var result: Node = new Node(NodeKind.ARGUMENTS, tok.index, -1);
         while (!this.tokIs(Operators.RIGHT_PARENTHESIS)) {
-            result.addChild(this.parseExpression());
+            result.children.push(this.parseExpression());
             this.skip(Operators.COMMA);
         }
-       this. consume(Operators.RIGHT_PARENTHESIS);
+        tok = this.consume(Operators.RIGHT_PARENTHESIS);
+        result.end = tok.end;
         return result;
     }
 
     private parseArrayAccessor(node: Node): Node {
-        var result: Node = Node.create(NodeKind.ARRAY_ACCESSOR,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(node);
+        var result: Node = new Node(NodeKind.ARRAY_ACCESSOR, this.tok.index, -1);
+        result.children.push(node);
         while (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
             this.nextToken(true);
-            result.addChild(this.parseExpression());
-           this. consume(Operators.RIGHT_SQUARE_BRACKET);
+            result.children.push(this.parseExpression());
+            result.end = this.consume(Operators.RIGHT_SQUARE_BRACKET).end;
         }
         return result;
     }
@@ -615,116 +535,87 @@ class AS3Parser {
     /**
      * tok is [
      */
-    private parseArrayLiteral(): IParserNode {
-        var result: Node = Node.create(NodeKind.ARRAY,
-            this.tok.getLine(),
-            this.tok.getColumn());
-       this. consume(Operators.LEFT_SQUARE_BRACKET);
+    private parseArrayLiteral(): Node {
+        var tok = this.consume(Operators.LEFT_SQUARE_BRACKET);
+        var result: Node = new Node(NodeKind.ARRAY, tok.index, -1);
         while (!this.tokIs(Operators.RIGHT_SQUARE_BRACKET)) {
-            result.addChild(this.parseExpression());
+            result.children.push(this.parseExpression());
             this.skip(Operators.COMMA);
         }
-       this. consume(Operators.RIGHT_SQUARE_BRACKET);
+        result.end = this.consume(Operators.RIGHT_SQUARE_BRACKET).end;
         return result;
     }
 
-    private parseAssignmentExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.ASSIGN,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseConditionalExpression());
+    private parseAssignmentExpression(): Node {
+        //TODO handle end
+        var result: Node = new Node(NodeKind.ASSIGN, this.tok.index, this.tok.end, null, [this.parseConditionalExpression()]);
         while (this.tokIs(Operators.EQUAL)
             || this.tokIs(Operators.PLUS_EQUAL) || this.tokIs(Operators.MINUS_EQUAL)
             || this.tokIs(Operators.TIMES_EQUAL) || this.tokIs(Operators.DIVIDED_EQUAL)
             || this.tokIs(Operators.MODULO_EQUAL) || this.tokIs(Operators.AND_EQUAL) || this.tokIs(Operators.OR_EQUAL)
             || this.tokIs(Operators.XOR_EQUAL)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseExpression());
+            result.children.push(this.parseExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
-    private parseBitwiseAndExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.B_AND,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseEqualityExpression());
+    private parseBitwiseAndExpression(): Node {
+        var result: Node = new Node(NodeKind.B_AND, this.tok.index, this.tok.end, this.tok.text, [this.parseEqualityExpression()]);
         while (this.tokIs(Operators.B_AND)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseEqualityExpression());
+            result.children.push(this.parseEqualityExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
-    private parseBitwiseOrExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.B_OR,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseBitwiseXorExpression());
+    private parseBitwiseOrExpression(): Node {
+        var result: Node = new Node(NodeKind.B_OR, this.tok.index,  this.tok.end, this.tok.text, [this.parseBitwiseXorExpression()]);
         while (this.tokIs(Operators.B_OR)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseBitwiseXorExpression());
+            result.children.push(this.parseBitwiseXorExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
-    private parseBitwiseXorExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.B_XOR,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseBitwiseAndExpression());
+    private parseBitwiseXorExpression(): Node {
+        var result: Node = new Node(NodeKind.B_XOR, this.tok.index, this.tok.end, this.tok.text, [this.parseBitwiseAndExpression()]);
         while (this.tokIs(Operators.B_XOR)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseBitwiseAndExpression());
+            result.children.push(this.parseBitwiseAndExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.lastChild && result.lastChild.end;
+        return result.children.length > 1 ? result : result.lastChild;
     }
 
 
     private parseBlock(result?: Node): Node {
+        
+        var tok = this.consume(Operators.LEFT_CURLY_BRACKET);
         if (!result) {
-            result = Node.create(NodeKind.BLOCK, this.tok.getLine(), this.tok.getColumn())
+            result = new Node(NodeKind.BLOCK, tok.index, this.tok.end)
+        } else {
+            result.start = tok.index;
         }
-       this. consume(Operators.LEFT_CURLY_BRACKET);
-
         while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
-            if (startsWith(this.tok.getText(), MULTIPLE_LINES_COMMENT)) {
-                this.currentFunctionNode.addChild(Node.create(NodeKind.MULTI_LINE_COMMENT,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.tok.getText()));
+            if (startsWith(this.tok.text, MULTIPLE_LINES_COMMENT)) {
+                this.currentFunctionNode.children.push(
+                    new Node(NodeKind.MULTI_LINE_COMMENT, this.tok.index, this.tok.end, this.tok.text)
+                );
                 this.nextToken();
             }
             else {
-                result.addChild(this.parseStatement());
+                result.children.push(this.parseStatement());
             }
         }
-       this. consume(Operators.RIGHT_CURLY_BRACKET);
+        result.end = this.consume(Operators.RIGHT_CURLY_BRACKET).end;
         return result;
     }
 
@@ -734,28 +625,21 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseCatch(): Node {
-       this. consume(KeyWords.CATCH);
-       this. consume(Operators.LEFT_PARENTHESIS);
-        var result: Node = Node.create(NodeKind.CATCH,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            Node.create(NodeKind.NAME,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+        var tok = this.consume(KeyWords.CATCH);
+        this.consume(Operators.LEFT_PARENTHESIS);
+        var result: Node = new Node(NodeKind.CATCH, tok.index, tok.end, null, [
+            new Node(NodeKind.NAME, this.tok.index, this.tok.end, this.tok.text)
+        ]);
         this.nextToken(true); // name
         if (this.tokIs(Operators.COLUMN)) {
             this.nextToken(true); // :
-            result.addChild(Node.create(NodeKind.TYPE,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.TYPE, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true); // type
         }
-       this. consume(Operators.RIGHT_PARENTHESIS);
-        result.addChild(this.parseBlock());
+        this.consume(Operators.RIGHT_PARENTHESIS);
+        var parseBlock = this.parseBlock()
+        result.children.push(parseBlock);
+        result.end = parseBlock.end;
         return result;
     }
 
@@ -767,57 +651,53 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseClass(meta: Node [], modifier: Token []): Node {
-       this. consume(KeyWords.CLASS);
-
-        var result: Node = Node.create(NodeKind.CLASS,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var tok = this.consume(KeyWords.CLASS);
+        var result: Node = new Node(NodeKind.CLASS, tok.index, tok.end);
 
         if (this.currentAsDoc != null) {
-            result.addChild(this.currentAsDoc);
+            result.children.push(this.currentAsDoc);
             this.currentAsDoc = null;
         }
         if (this.currentMultiLineComment != null) {
-            result.addChild(this.currentMultiLineComment);
+            result.children.push(this.currentMultiLineComment);
             this.currentMultiLineComment = null;
         }
 
-        result.addChild(Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.parseQualifiedName(true)));
+        var index = this.tok.index,
+            name = this.parseQualifiedName(true)
+        result.children.push(new Node(NodeKind.NAME, index, index + name.length, name));
 
-        result.addChild(this.convertMeta(meta));
-        result.addChild(this.convertModifiers(modifier));
+        result.children.push(this.convertMeta(meta));
+        result.children.push(this.convertModifiers(modifier));
 
         // this.nextToken( true ); // name
 
         do {
             if (this.tokIs(KeyWords.EXTENDS)) {
                 this.nextToken(true); // extends
-                result.addChild(Node.create(NodeKind.EXTENDS,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.parseQualifiedName(false)));
+                index =  this.tok.index;
+                name = this.parseQualifiedName(false);
+                result.children.push(new Node(NodeKind.EXTENDS, index, index + name.length, name));
             }
             else if (this.tokIs(KeyWords.IMPLEMENTS)) {
-                result.addChild(this.parseImplementsList());
+                result.children.push(this.parseImplementsList());
             }
         }
         while (!this.tokIs(Operators.LEFT_CURLY_BRACKET));
-       this. consume(Operators.LEFT_CURLY_BRACKET);
-        result.addChild(this.parseClassContent());
-       this. consume(Operators.RIGHT_CURLY_BRACKET);
+        this.consume(Operators.LEFT_CURLY_BRACKET);
+        result.children.push(this.parseClassContent());
+        var tok = this.consume(Operators.RIGHT_CURLY_BRACKET);
+        
+        result.end = tok.end;
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, index);
+        
         return result;
     }
 
-    private parseClassConstant(result: Node,
-        modifiers: Token [],
-        meta: Node []): void {
-        result.addChild(this.parseConstList(meta,
-            modifiers));
+    private parseClassConstant(result: Node, modifiers: Token [], meta: Node []): void {
+        result.children.push(this.parseConstList(meta, modifiers));
         if (this.tokIs(Operators.SEMI_COLUMN)) {
             this.nextToken();
         }
@@ -825,18 +705,15 @@ class AS3Parser {
         modifiers.length = 0;
     }
 
-    private parseClassField(result: Node,
-        modifiers: Token [],
-        meta: Node []): void {
-        var varList: Node = this.parseVarList(meta,
-            modifiers);
-        result.addChild(varList);
+    private parseClassField(result: Node, modifiers: Token [], meta: Node []): void {
+        var varList: Node = this.parseVarList(meta, modifiers);
+        result.children.push(varList);
         if (this.currentAsDoc != null) {
-            varList.addChild(this.currentAsDoc);
+            varList.children.push(this.currentAsDoc);
             this.currentAsDoc = null;
         }
         if (this.currentMultiLineComment != null) {
-            result.addChild(this.currentMultiLineComment);
+            result.children.push(this.currentMultiLineComment);
             this.currentMultiLineComment = null;
         }
         if (this.tokIs(Operators.SEMI_COLUMN)) {
@@ -846,11 +723,8 @@ class AS3Parser {
         modifiers.length = 0;
     }
 
-    private parseClassFunctions(result: Node,
-        modifiers: Token [],
-        meta: Node []): void {
-        result.addChild(this.parseFunction(meta,
-            modifiers));
+    private parseClassFunctions(result: Node, modifiers: Token [], meta: Node []): void {
+        result.children.push(this.parseFunction(meta, modifiers));
         meta.length = 0;
         modifiers.length = 0;
     }
@@ -861,36 +735,29 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseCondition(): Node {
-        this.consume(Operators.LEFT_PARENTHESIS);
-        var result: Node = Node.create(NodeKind.CONDITION,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseExpression());
-        this. consume(Operators.RIGHT_PARENTHESIS);
+        var tok = this.consume(Operators.LEFT_PARENTHESIS);
+        var result: Node = new Node(NodeKind.CONDITION, tok.index, -1, null, [this.parseExpression()]);
+        tok = this.consume(Operators.RIGHT_PARENTHESIS);
+        result.end = tok.end;
         return result;
     }
 
-    private parseConditionalExpression(): IParserNode {
-        var result: IParserNode = this.parseOrExpression();
+    private parseConditionalExpression(): Node {
+        var result: Node = this.parseOrExpression();
         if (this.tokIs(Operators.QUESTION_MARK)) {
-            var conditional: Node = Node.create(NodeKind.CONDITIONAL,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                result);
+            var conditional: Node = new Node(NodeKind.CONDITIONAL, result.start, -1, null, [result]);
             this.nextToken(true); // ?
-            conditional.addChild(this.parseExpression());
+            conditional.children.push(this.parseExpression());
             this.nextToken(true); // :
-            conditional.addChild(this.parseExpression());
-
+            conditional.children.push(this.parseExpression());
+            conditional.end = conditional.lastChild.start;
             return conditional;
         }
         return result;
     }
 
     private parseConst(): Node {
-        var result: Node;
-        result = this.parseConstList(null,
-            null);
+        var result = this.parseConstList(null, null);
         this.skip(Operators.SEMI_COLUMN);
         return result;
     }
@@ -902,24 +769,28 @@ class AS3Parser {
      * @param meta
      * @throws TokenException
      */
-    private parseConstList(meta: Node [],
-        modifiers: Token []): Node {
-       this. consume(KeyWords.CONST);
-        var result: Node = Node.create(NodeKind.CONST_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(this.convertMeta(meta));
-        result.addChild(this.convertModifiers(modifiers));
+    private parseConstList(meta: Node [], modifiers: Token []): Node {
+        var tok = this.consume(KeyWords.CONST);
+        var result: Node = new Node(NodeKind.CONST_LIST, tok.index, -1);
+        result.children.push(this.convertMeta(meta));
+        result.children.push(this.convertModifiers(modifiers));
         this.collectVarListContent(result);
+        
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, tok.index);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, 0);
+        
         return result;
     }
 
     private parseDecrement(node: Node): Node {
         this.nextToken(true);
-        var result: Node = Node.create(NodeKind.POST_DEC,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(node);
+        var result: Node = new Node(NodeKind.POST_DEC, this.tok.index, -1);
+        result.children.push(node);
+        result.end = node.end;
         return result;
     }
 
@@ -929,13 +800,12 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseDo(): Node {
-       this. consume(KeyWords.DO);
-        var result: Node = Node.create(NodeKind.DO,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseStatement());
-       this. consume(KeyWords.WHILE);
-        result.addChild(this.parseCondition());
+        var tok = this.consume(KeyWords.DO);
+        var result: Node = new Node(NodeKind.DO, tok.index, -1,  null , [this.parseStatement()]);
+        this.consume(KeyWords.WHILE);
+        var cond = this.parseCondition()
+        result.children.push(cond);
+        result.end = cond.end;
         if (this.tokIs(Operators.SEMI_COLUMN)) {
             this.nextToken(true);
         }
@@ -945,94 +815,82 @@ class AS3Parser {
     private parseDot(node: Node): Node {
         this.nextToken();
         if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
+            var index = this.tok.index
             this.nextToken();
-            var result: Node = Node.create(NodeKind.E4X_FILTER,
-                this.tok.getLine(),
-                this.tok.getColumn());
-            result.addChild(node);
-            result.addChild(this.parseExpression());
-           this. consume(Operators.RIGHT_PARENTHESIS);
+            var result: Node = new Node(NodeKind.E4X_FILTER, tok.index, -1);
+            result.children.push(node);
+            result.children.push(this.parseExpression());
+            var tok = this.consume(Operators.RIGHT_PARENTHESIS);
+            result.end = tok.end;
             return result;
         }
         else if (this.tokIs(Operators.TIMES)) {
-            var result: Node = Node.create(NodeKind.E4X_STAR,
-                this.tok.getLine(),
-                this.tok.getColumn());
-            result.addChild(node);
+            var result: Node = new Node(NodeKind.E4X_STAR, this.tok.index, -1);
+            result.children.push(node);
+            result.end = node.end;
             return result;
         }
-        var result: Node = Node.create(NodeKind.DOT,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(node);
-        result.addChild(this.parseExpression());
+        var result: Node = new Node(NodeKind.DOT, this.tok.index, -1);
+        result.children.push(node);
+        result.children.push(this.parseExpression());
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, 0);
         return result;
     }
 
     private parseEmptyStatement(): Node {
         var result: Node;
-        result = Node.create(NodeKind.STMT_EMPTY,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            Operators.SEMI_COLUMN.toString());
+        result = new Node(NodeKind.STMT_EMPTY, this.tok.index, this.tok.end, Operators.SEMI_COLUMN);
         this.nextToken(true);
         return result;
     }
 
     private parseEncapsulatedExpression(): Node {
-       this. consume(Operators.LEFT_PARENTHESIS);
-        var result: Node = Node.create(NodeKind.ENCAPSULATED,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(this.parseExpressionList());
-
-       this. consume(Operators.RIGHT_PARENTHESIS);
-
+        var tok = this.consume(Operators.LEFT_PARENTHESIS);
+        var result: Node = new Node(NodeKind.ENCAPSULATED, tok.index, -1);
+        result.children.push(this.parseExpressionList());
+        tok = this.consume(Operators.RIGHT_PARENTHESIS);
+        result.end = tok.end;
         return result;
     }
 
-    private parseEqualityExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.EQUALITY,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseRelationalExpression());
-        while (this.tokIs(Operators.DOUBLE_EQUAL)
-            || this.tokIs(Operators.DOUBLE_EQUAL_AS2) || this.tokIs(Operators.STRICTLY_EQUAL)
-            || this.tokIs(Operators.NON_EQUAL) || this.tokIs(Operators.NON_EQUAL_AS2_1)
-            || this.tokIs(Operators.NON_EQUAL_AS2_2) || this.tokIs(Operators.NON_STRICTLY_EQUAL)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+    private parseEqualityExpression(): Node {
+        var result: Node = new Node(NodeKind.EQUALITY, this.tok.index, -1, null, [this.parseRelationalExpression()]);
+        while (
+            this.tokIs(Operators.DOUBLE_EQUAL) || this.tokIs(Operators.DOUBLE_EQUAL_AS2) || 
+            this.tokIs(Operators.STRICTLY_EQUAL) || this.tokIs(Operators.NON_EQUAL) || 
+            this.tokIs(Operators.NON_EQUAL_AS2_1) || this.tokIs(Operators.NON_EQUAL_AS2_2) ||
+            this.tokIs(Operators.NON_STRICTLY_EQUAL)
+        ) {
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseRelationalExpression());
+            result.children.push(this.parseRelationalExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, 0);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
-    private parseExpressionList(): IParserNode {
-        var result: Node = Node.create(NodeKind.EXPR_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseAssignmentExpression());
+    private parseExpressionList(): Node {
+        var result: Node = new Node(NodeKind.EXPR_LIST, this.tok.index, -1, null, [this.parseAssignmentExpression()]);
         while (this.tokIs(Operators.COMMA)) {
             this.nextToken(true);
-            result.addChild(this.parseAssignmentExpression());
+            result.children.push(this.parseAssignmentExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, 0);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
     private parseFinally(): Node {
         var result: Node;
+        var index = this.tok.index;
         this.nextToken(true);
-        result = Node.create(NodeKind.FINALLY,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseBlock());
+        var block = this.parseBlock()
+        result = new Node(NodeKind.FINALLY, index, block.end, null, [block]);
         return result;
     }
 
@@ -1042,14 +900,14 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseFor(): Node {
-       this. consume(KeyWords.FOR);
+        var tok = this.consume(KeyWords.FOR);
 
         if (this.tokIs(KeyWords.EACH)) {
             this.nextToken();
-            return this.parseForEach();
+            return this.parseForEach(tok.index);
         }
         else {
-            return this.parseTraditionalFor();
+            return this.parseTraditionalFor(tok.index);
         }
     }
 
@@ -1058,46 +916,40 @@ class AS3Parser {
      * 
      * @throws TokenException
      */
-    private parseForEach(): Node {
-       this. consume(Operators.LEFT_PARENTHESIS);
+    private parseForEach(index: number): Node {
+        this.consume(Operators.LEFT_PARENTHESIS);
 
-        var result: Node = Node.create(NodeKind.FOREACH,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.FOREACH, index, -1);
         if (this.tokIs(KeyWords.VAR)) {
-            var node: Node = Node.create(NodeKind.VAR,
-                this.tok.getLine(),
-                this.tok.getColumn());
+            var node: Node = new Node(NodeKind.VAR, this.tok.index, -1);
             this.nextToken();
-            node.addChild(this.parseNameTypeInit());
-            result.addChild(node);
+            var child = this.parseNameTypeInit()
+            node.children.push(child);
+            node.end = child.end;
+            result.children.push(node);
         }
         else {
-            result.addChild(Node.create(NodeKind.NAME,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.NAME, this.tok.index, this.tok.end, this.tok.text));
             // names allowed?
             this.nextToken();
         }
+        var index = this.tok.index;
         this.nextToken(); // in
-        result.addChild(Node.create(NodeKind.IN,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseExpression()));
-       this. consume(Operators.RIGHT_PARENTHESIS);
-        result.addChild(this.parseStatement());
+        var expr = this.parseExpression()
+        result.children.push(new Node(NodeKind.IN, index, expr.end, null, [expr]));
+        this.consume(Operators.RIGHT_PARENTHESIS);
+        var statement = this.parseStatement()
+        result.children.push(statement);
+        result.end = statement.end;
         return result;
     }
 
     private parseForIn(result: Node): Node {
+        var index = this.tok.index
         this.nextToken();
-        result.addChild(Node.create(NodeKind.IN,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseExpression()));
-        result.setId(NodeKind.FORIN);
+        var expr = this.parseExpression()
+        result.children.push(new Node(NodeKind.IN, index, expr.end, null, [expr]));
+        result.kind = NodeKind.FORIN;
         return result;
     }
 
@@ -1108,35 +960,36 @@ class AS3Parser {
      * @param meta
      * @throws TokenException
      */
-    private parseFunction(meta: Node [],
-        modifiers: Token []): Node {
+    private parseFunction(meta: Node [], modifiers: Token []): Node {
         var signature: Node[] = this.doParseSignature();
-        var result: Node = Node.create(this.findFunctionTypeFromSignature(signature),
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            signature[0].getStringValue());
+        var result: Node = new Node(
+            this.findFunctionTypeFromSignature(signature), signature[0].start, 
+            -1,  signature[0].text
+        );
 
         if (this.currentAsDoc != null) {
-            result.addChild(this.currentAsDoc);
+            result.children.push(this.currentAsDoc);
             this.currentAsDoc = null;
         }
         if (this.currentMultiLineComment != null) {
-            result.addChild(this.currentMultiLineComment);
+            result.children.push(this.currentMultiLineComment);
             this.currentMultiLineComment = null;
         }
-        result.addChild(this.convertMeta(meta));
-        result.addChild(this.convertModifiers(modifiers));
-        result.addChild(signature[1]);
-        result.addChild(signature[2]);
-        result.addChild(signature[3]);
+        result.children.push(this.convertMeta(meta));
+        result.children.push(this.convertModifiers(modifiers));
+        result.children.push(signature[1]);
+        result.children.push(signature[2]);
+        result.children.push(signature[3]);
         if (this.tokIs(Operators.SEMI_COLUMN)) {
-           this. consume(Operators.SEMI_COLUMN);
+            this.consume(Operators.SEMI_COLUMN);
         }
         else {
-            result.addChild(this.parseFunctionBlock());
+            result.children.push(this.parseFunctionBlock());
         }
         this.currentFunctionNode = null;
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, 0);
         return result;
     }
 
@@ -1148,9 +1001,7 @@ class AS3Parser {
      */
 
     private parseFunctionBlock(): Node {
-        var block: Node = Node.create(NodeKind.BLOCK,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var block: Node = new Node(NodeKind.BLOCK, this.tok.index, -1);
 
         this.currentFunctionNode = block;
 
@@ -1160,17 +1011,17 @@ class AS3Parser {
     }
 
     private parseFunctionCall(node: Node): Node {
-        var result: Node = Node.create(NodeKind.CALL,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(node);
+        var result: Node = new Node(NodeKind.CALL, this.tok.index, -1);
+        result.children.push(node);
         while (this.tokIs(Operators.LEFT_PARENTHESIS)) {
-            result.addChild(this.parseArgumentList());
+            result.children.push(this.parseArgumentList());
         }
         while (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
-            result.addChild(this.parseArrayLiteral());
+            result.children.push(this.parseArrayLiteral());
         }
-
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, 0);
         return result;
     }
 
@@ -1182,14 +1033,16 @@ class AS3Parser {
     private parseFunctionSignature(): Node {
         var signature: Node[] = this.doParseSignature();
         this.skip(Operators.SEMI_COLUMN);
-        var result: Node = Node.create(this.findFunctionTypeFromSignature(signature),
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            signature[0].getStringValue());
-        result.addChild(signature[1]);
-        result.addChild(signature[2]);
-        result.addChild(signature[3]);
+        var result: Node = new Node(
+            this.findFunctionTypeFromSignature(signature), signature[0].start, 
+            -1, signature[0].text
+        );
+        result.children.push(signature[1]);
+        result.children.push(signature[2]);
+        result.children.push(signature[3]);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, 0);
         return result;
     }
 
@@ -1199,16 +1052,16 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseIf(): Node {
-       this. consume(KeyWords.IF);
-        var result: Node = Node.create(NodeKind.IF,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseCondition());
-        result.addChild(this.parseStatement());
+        var tok = this.consume(KeyWords.IF);
+        var result: Node = new Node(NodeKind.IF, tok.index, -1, null, [this.parseCondition()]);
+        result.children.push(this.parseStatement());
         if (this.tokIs(KeyWords.ELSE)) {
             this.nextToken(true);
-            result.addChild(this.parseStatement());
+            result.children.push(this.parseStatement());
         }
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, 0);
         return result;
     }
 
@@ -1219,23 +1072,16 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseImplementsList(): Node {
-       this. consume(KeyWords.IMPLEMENTS);
-
-        var result: Node = Node.create(NodeKind.IMPLEMENTS_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(Node.create(NodeKind.IMPLEMENTS,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.parseQualifiedName(true)));
+        this.consume(KeyWords.IMPLEMENTS);
+        var result: Node = new Node(NodeKind.IMPLEMENTS_LIST, this.tok.index, -1);
+        var index = this.tok.index;
+        var name = this.parseQualifiedName(true);
+        result.children.push(new Node(NodeKind.IMPLEMENTS, index, index + name.length, name));
         while (this.tokIs(Operators.COMMA)) {
             this.nextToken(true);
-            result.addChild(Node.create(NodeKind.IMPLEMENTS,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-            null,
-                this.parseQualifiedName(false)));
+            var index = this.tok.index;
+            var name = this.parseQualifiedName(true);
+            result.children.push(new Node(NodeKind.IMPLEMENTS, index, index + name.length, name));
         }
         return result;
     }
@@ -1246,12 +1092,9 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseImport(): Node {
-       this. consume(KeyWords.IMPORT);
-        var result: Node = Node.create(NodeKind.IMPORT,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.parseImportName());
+        var tok = this.consume(KeyWords.IMPORT);
+        var name =  this.parseImportName()
+        var result: Node = new Node(NodeKind.IMPORT, tok.index, tok.index + name.length, name);
         this.skip(Operators.SEMI_COLUMN);
         return result;
     }
@@ -1263,39 +1106,42 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseImportName(): string {
-        var result: StringBuffer = new StringBuffer();
+        var result = ''
 
-        result.append(this.tok.getText());
+        result += this.tok.text;
         this.nextToken();
         while (this.tokIs(Operators.DOT)) {
-            result.append(Operators.DOT);
+            result += Operators.DOT;
             this.nextToken(); // .
-            result.append(this.tok.getText());
+            result += this.tok.text;
             this.nextToken(); // part of name
         }
-        return result.toString();
+        return result;
     }
 
-    private parseIncludeExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.INCLUDE,
-            this.tok.getLine(),
-            this.tok.getColumn());
+    private parseIncludeExpression(): Node {
+        var result: Node = new Node(NodeKind.INCLUDE, this.tok.index, -1);
+        var tok : Token;
         if (this.tokIs(KeyWords.INCLUDE)) {
-           this. consume(KeyWords.INCLUDE);
+            tok = this.consume(KeyWords.INCLUDE);
         }
         else if (this.tokIs(KeyWords.INCLUDE_AS2)) {
-           this. consume(KeyWords.INCLUDE_AS2);
+            tok = this.consume(KeyWords.INCLUDE_AS2);
         }
-        result.addChild(this.parseExpression());
+        if (tok) {
+            result.start = tok.index;
+        }
+        result.children.push(this.parseExpression());
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, 0);
         return result;
     }
 
     private parseIncrement(node: Node): Node {
         this.nextToken(true);
-        var result: Node = Node.create(NodeKind.POST_INC,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(node);
+        var result: Node = new Node(NodeKind.POST_INC, node.start, this.tok.end);
+        result.children.push(node);
         return result;
     }
 
@@ -1306,49 +1152,41 @@ class AS3Parser {
      * @param modifier
      * @throws TokenException
      */
-    private parseInterface(meta: Node [],
-        modifier: Token []): Node {
-       this. consume(KeyWords.INTERFACE);
-        var result: Node = Node.create(NodeKind.INTERFACE,
-            this.tok.getLine(),
-            this.tok.getColumn());
+    private parseInterface(meta: Node [], modifier: Token []): Node {
+        var tok = this.consume(KeyWords.INTERFACE)
+        var result: Node = new Node(NodeKind.INTERFACE, tok.index, -1);
 
         if (this.currentAsDoc != null) {
-            result.addChild(this.currentAsDoc);
+            result.children.push(this.currentAsDoc);
             this.currentAsDoc = null;
         }
         if (this.currentMultiLineComment != null) {
-            result.addChild(this.currentMultiLineComment);
+            result.children.push(this.currentMultiLineComment);
             this.currentMultiLineComment = null;
         }
-        result.addChild(Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.parseQualifiedName(true)));
+        var name = this.parseQualifiedName(true);
+        result.children.push(new Node(NodeKind.NAME, this.tok.index, this.tok.index + name.length, name));
 
-        result.addChild(this.convertMeta(meta));
-        result.addChild(this.convertModifiers(modifier));
+        result.children.push(this.convertMeta(meta));
+        result.children.push(this.convertModifiers(modifier));
 
         if (this.tokIs(KeyWords.EXTENDS)) {
             this.nextToken(); // extends
-            result.addChild(Node.create(NodeKind.EXTENDS,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.parseQualifiedName(false)));
+            name = this.parseQualifiedName(false);
+            result.children.push(new Node(NodeKind.EXTENDS,  this.tok.index, this.tok.index + name.length, name));
         }
         while (this.tokIs(Operators.COMMA)) {
             this.nextToken(); // comma
-            result.addChild(Node.create(NodeKind.EXTENDS,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.parseQualifiedName(false)));
+            name = this.parseQualifiedName(false);
+            result.children.push(new Node(NodeKind.EXTENDS, this.tok.index, this.tok.index + name.length, name));
         }
-       this. consume(Operators.LEFT_CURLY_BRACKET);
-        result.addChild(this.parseInterfaceContent());
-       this. consume(Operators.RIGHT_CURLY_BRACKET);
+        this.consume(Operators.LEFT_CURLY_BRACKET);
+        result.children.push(this.parseInterfaceContent());
+        tok = this.consume(Operators.RIGHT_CURLY_BRACKET);
+        result.end = tok.end;
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, tok.index);
         return result;
     }
 
@@ -1358,33 +1196,30 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseLambdaExpression(): Node {
-       this. consume(KeyWords.FUNCTION);
+        var tok = this.consume(KeyWords.FUNCTION);
         var result: Node;
 
-        //if (this.tok.getText().compareTo("(") == 0) {
-        if (this.tok.getText()== "(") {
-            result = Node.create(NodeKind.LAMBDA,
-                this.tok.getLine(),
-                this.tok.getColumn());
+        //if (this.tok.text.compareTo("(") == 0) {
+        if (this.tok.text === "(") {
+            result = new Node(NodeKind.LAMBDA, tok.index, this.tok.end);
         }
         else {
-            result = Node.create(NodeKind.FUNCTION,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText());
+            result = new Node(NodeKind.FUNCTION, tok.index, this.tok.end, this.tok.text);
             this.nextToken(true);
         }
-        result.addChild(this.parseParameterList());
-        result.addChild(this.parseOptionalType());
-        result.addChild(this.parseBlock());
+        result.children.push(this.parseParameterList());
+        result.children.push(this.parseOptionalType());
+        result.children.push(this.parseBlock());
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
-    private parseLines(filePath: string, lines: string[]): IParserNode {
+    private parseFile(filePath: string, content: string): Node {
         this.setFileName(filePath);
         this.scn = new AS3Scanner();
-        this.scn.setLines(lines);
+        this.scn.setContent(content);
         return this.parseCompilationUnit();
     }
 
@@ -1395,85 +1230,69 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseMetaData(): Node {
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';
 
-        var line: number = this.tok.getLine();
-        var column: number = this.tok.getColumn();
+        var index= this.tok.index;
 
-       this. consume(Operators.LEFT_SQUARE_BRACKET);
+        var index = this.consume(Operators.LEFT_SQUARE_BRACKET).index;
         while (!this.tokIs(Operators.RIGHT_SQUARE_BRACKET)) {
-            if (buffer.toString().length > 0) {
-                buffer.append(' ');
-            }
-            buffer.append(this.tok.getText());
+            buffer += this.tok.text;
             this.nextToken();
         }
+        var end = this.tok.end;
         this.skip(Operators.RIGHT_SQUARE_BRACKET);
-        var metaDataNode: Node = Node.create(NodeKind.META,
-            line,
-            column,
-            null,
-            buffer.toString());
+        var metaDataNode: Node = new Node(NodeKind.META, index, end, '[' + buffer + ']');
 
         return metaDataNode;
     }
 
-    private parseMultiplicativeExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.MULTIPLICATION,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseUnaryExpression());
-        while (this.tokIs(Operators.TIMES)
-            || this.tokIs(Operators.SLASH) || this.tokIs(Operators.MODULO)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+    private parseMultiplicativeExpression(): Node {
+        var result: Node = new Node(NodeKind.MULTIPLICATION, this.tok.index, -1, null, [this.parseUnaryExpression()]);
+        while (this.tokIs(Operators.TIMES) || this.tokIs(Operators.SLASH) || this.tokIs(Operators.MODULO)) {
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseUnaryExpression());
+            result.children.push(this.parseUnaryExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
     private parseNamespaceName(): string {
-        var name: string = this.tok.getText();
+        var name: string = this.tok.text;
         this.nextToken(); // simple name for now
         return name;
     }
 
     private parseNameTypeInit(): Node {
-        var result: Node = Node.create(NodeKind.NAME_TYPE_INIT,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.tok.getText()));
+        var result: Node = new Node(NodeKind.NAME_TYPE_INIT, this.tok.index, -1);
+        result.children.push(new Node(NodeKind.NAME, this.tok.index, this.tok.end, this.tok.text));
         this.nextToken(true); // name
-        result.addChild(this.parseOptionalType());
-        result.addChild(this.parseOptionalInit());
+        result.children.push(this.parseOptionalType());
+        result.children.push(this.parseOptionalInit());
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
     private parseNewExpression(): Node {
-       this. consume(KeyWords.NEW);
+        var tok = this.consume(KeyWords.NEW);
 
-        var result: Node = Node.create(NodeKind.NEW,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(this.parseExpression()); // name
+        var result: Node = new Node(NodeKind.NEW, tok.index, -1);
+        result.children.push(this.parseExpression()); // name
         if (this.tokIs(Operators.VECTOR_START)) {
-            result.addChild(Node.create(NodeKind.VECTOR,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseVector()));
+            var index = this.tok.index
+            var vec = this.parseVector()
+            result.children.push(new Node(NodeKind.VECTOR, index, vec.end, null, [vec]));
         }
         if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
-            result.addChild(this.parseArgumentList());
+            result.children.push(this.parseArgumentList());
         }
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
@@ -1481,15 +1300,14 @@ class AS3Parser {
      * tok is {
      */
     private parseObjectLiteral(): Node {
-        var result: Node = Node.create(NodeKind.OBJECT,
-            this.tok.getLine(),
-            this.tok.getColumn());
-       this. consume(Operators.LEFT_CURLY_BRACKET);
+        var tok = this.consume(Operators.LEFT_CURLY_BRACKET);
+        var result: Node = new Node(NodeKind.OBJECT, tok.index, tok.end);
         while (!this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
-            result.addChild(this.parseObjectLiteralPropertyDeclaration());
+            result.children.push(this.parseObjectLiteralPropertyDeclaration());
             this.skip(Operators.COMMA);
         }
-       this. consume(Operators.RIGHT_CURLY_BRACKET);
+        tok = this.consume(Operators.RIGHT_CURLY_BRACKET);
+        result.end = tok.end;
         return result;
     }
 
@@ -1497,21 +1315,15 @@ class AS3Parser {
      * tok is name
      */
     private parseObjectLiteralPropertyDeclaration(): Node {
-        var result: Node = Node.create(NodeKind.PROP,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        var name: Node = Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.tok.getText());
-        result.addChild(name);
+        var result: Node = new Node(NodeKind.PROP, this.tok.index, this.tok.end);
+        var name: Node = new Node(NodeKind.NAME, this.tok.index,  this.tok.end, this.tok.text);
+        result.children.push(name);
         this.nextToken(); // name
-       this. consume(Operators.COLUMN);
-        result.addChild(Node.create(NodeKind.VALUE,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseExpression()));
+        this.consume(Operators.COLUMN);
+        var expr = this.parseExpression();
+        var val = new Node(NodeKind.VALUE, this.tok.index, expr.end, null, [expr])
+        result.children.push(val);
+        result.end = val.end;
         return result;
     }
 
@@ -1524,10 +1336,9 @@ class AS3Parser {
         var result: Node = null;
         if (this.tokIs(Operators.EQUAL)) {
             this.nextToken(true);
-            result = Node.create(NodeKind.INIT,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var index = this.tok.index;
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.INIT, index, expr.end, null, [expr]);
         }
         return result;
     }
@@ -1539,11 +1350,7 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseOptionalType(): Node {
-        var result: Node = Node.create(NodeKind.TYPE,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            "");
+        var result: Node = new Node(NodeKind.TYPE, this.tok.index, this.tok.index, "");
         if (this.tokIs(Operators.COLUMN)) {
             this.nextToken(true);
             result = this.parseType();
@@ -1551,23 +1358,17 @@ class AS3Parser {
         return result;
     }
 
-    private parseOrExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.OR,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseAndExpression());
-        while (this.tokIs(Operators.LOGICAL_OR)
-            || this.tokIs(Operators.LOGICAL_OR_AS2)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+    private parseOrExpression(): Node {
+        var result: Node = new Node(NodeKind.OR, this.tok.index, -1, null, [this.parseAndExpression()]);
+        while (this.tokIs(Operators.LOGICAL_OR) || this.tokIs(Operators.LOGICAL_OR_AS2)) {
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseAndExpression());
+            result.children.push(this.parseAndExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
     /**
@@ -1576,25 +1377,20 @@ class AS3Parser {
      * @throws UnExpectedTokenException
      */
     private parsePackage(): Node {
-       this. consume(KeyWords.PACKAGE);
-
-        var result: Node = Node.create(NodeKind.PACKAGE,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        var nameBuffer: StringBuffer = new StringBuffer();
-
+        var tok = this.consume(KeyWords.PACKAGE);
+        var result: Node = new Node(NodeKind.PACKAGE, tok.index, -1);
+        var nameBuffer = '';
+        
+        var index = this.tok.index;
         while (!this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
-            nameBuffer.append(this.tok.getText());
+            nameBuffer+= this.tok.text;
             this.nextToken();
         }
-        result.addChild(Node.create(NodeKind.NAME,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            nameBuffer.toString()));
-       this. consume(Operators.LEFT_CURLY_BRACKET);
-        result.addChild(this.parsePackageContent());
-       this. consume(Operators.RIGHT_CURLY_BRACKET);
+        result.children.push(new Node(NodeKind.NAME, index, index + nameBuffer.length, nameBuffer));
+        this.consume(Operators.LEFT_CURLY_BRACKET);
+        result.children.push(this.parsePackageContent());
+        tok = this.consume(Operators.RIGHT_CURLY_BRACKET);
+        result.end = tok.end
         return result;
     }
 
@@ -1602,22 +1398,20 @@ class AS3Parser {
      * tok is the name of a parameter or ...
      */
     private parseParameter(): Node {
-        var result: Node = Node.create(NodeKind.PARAMETER,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.PARAMETER, this.tok.index, -1);
         if (this.tokIs(Operators.REST_PARAMETERS)) {
+            var index = this.tok.index;
             this.nextToken(true); // ...
-            var rest: Node = Node.create(NodeKind.REST,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText());
+            var rest: Node = new Node(NodeKind.REST, index, this.tok.end, this.tok.text);
             this.nextToken(true); // rest
-            result.addChild(rest);
+            result.children.push(rest);
         }
         else {
-            result.addChild(this.parseNameTypeInit());
+            result.children.push(this.parseNameTypeInit());
         }
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
@@ -1627,13 +1421,11 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseParameterList(): Node {
-       this. consume(Operators.LEFT_PARENTHESIS);
+        var tok = this.consume(Operators.LEFT_PARENTHESIS);
 
-        var result: Node = Node.create(NodeKind.PARAMETER_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.PARAMETER_LIST, tok.index, -1);
         while (!this.tokIs(Operators.RIGHT_PARENTHESIS)) {
-            result.addChild(this.parseParameter());
+            result.children.push(this.parseParameter());
             if (this.tokIs(Operators.COMMA)) {
                 this.nextToken(true);
             }
@@ -1641,7 +1433,8 @@ class AS3Parser {
                 break;
             }
         }
-       this. consume(Operators.RIGHT_PARENTHESIS);
+        tok = this.consume(Operators.RIGHT_PARENTHESIS);
+        result.end = tok.end;
         return result;
     }
 
@@ -1651,29 +1444,26 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseQualifiedName(skipPackage: boolean): string {
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer= ''
 
-        buffer.append(this.tok.getText());
+        buffer+= this.tok.text;
         this.nextToken();
         while (this.tokIs(Operators.DOT)
             || this.tokIs(Operators.DOUBLE_COLUMN)) {
-            buffer.append(this.tok.getText());
+            buffer+= this.tok.text;
             this.nextToken();
-            buffer.append(this.tok.getText());
+            buffer+= this.tok.text;
             this.nextToken(); // name
         }
 
         if (skipPackage) {
-            return buffer.toString().substring(buffer.toString().lastIndexOf(Operators.DOT.toString()) + 1);
+            return buffer.substring(buffer.lastIndexOf(Operators.DOT) + 1);
         }
-        return buffer.toString();
+        return buffer;
     }
 
-    private parseRelationalExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.RELATION,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseShiftExpression());
+    private parseRelationalExpression(): Node {
+        var result: Node = new Node(NodeKind.RELATION, this.tok.index, -1, null, [this.parseShiftExpression()]);
         while (this.tokIs(Operators.INFERIOR)
             || this.tokIs(Operators.INFERIOR_AS2) || this.tokIs(Operators.INFERIOR_OR_EQUAL)
             || this.tokIs(Operators.INFERIOR_OR_EQUAL_AS2) || this.tokIs(Operators.SUPERIOR)
@@ -1681,67 +1471,51 @@ class AS3Parser {
             || this.tokIs(Operators.SUPERIOR_OR_EQUAL_AS2) || this.tokIs(KeyWords.IS) || this.tokIs(KeyWords.IN)
             && !this.isInFor || this.tokIs(KeyWords.AS) || this.tokIs(KeyWords.INSTANCE_OF)) {
             if (!this.tokIs(KeyWords.AS)) {
-                result.addChild(Node.create(NodeKind.OP,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.tok.getText()));
+                result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             }
             else {
-                result.addChild(Node.create(NodeKind.AS,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    null,
-                    this.tok.getText()));
+                result.children.push(new Node(NodeKind.AS, this.tok.index, this.tok.end, this.tok.text));
             }
             this.nextToken(true);
-            result.addChild(this.parseShiftExpression());
+            result.children.push(this.parseShiftExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
-    private parseReturnStatement(): IParserNode {
+    private parseReturnStatement(): Node {
         var result: Node;
 
+        var index = this.tok.index,
+            end = this.tok.end;
         this.nextTokenAllowNewLine();
-        if (this.tokIs(NEW_LINE)
-            || this.tokIs(Operators.SEMI_COLUMN)) {
+        if (this.tokIs(NEW_LINE) || this.tokIs(Operators.SEMI_COLUMN)) {
             this.nextToken(true);
-            result = Node.create(NodeKind.RETURN,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                "");
+            result = new Node(NodeKind.RETURN, index, end, "");
         }
         else {
-            result = Node.create(NodeKind.RETURN,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.RETURN, index, expr.end, null, [expr]);
             this.skip(Operators.SEMI_COLUMN);
         }
         return result;
     }
 
-    private parseShiftExpression(): IParserNode {
-        var result: Node = Node.create(NodeKind.SHIFT,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseAdditiveExpression());
+    private parseShiftExpression(): Node {
+        var result: Node = new Node(NodeKind.SHIFT, this.tok.index, -1, null, [this.parseAdditiveExpression()]);
         while (this.tokIs(Operators.DOUBLE_SHIFT_LEFT)
             || this.tokIs(Operators.TRIPLE_SHIFT_LEFT) || this.tokIs(Operators.DOUBLE_SHIFT_RIGHT)
             || this.tokIs(Operators.TRIPLE_SHIFT_RIGHT)) {
-            result.addChild(Node.create(NodeKind.OP,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+            result.children.push(new Node(NodeKind.OP, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken(true);
-            result.addChild(this.parseAdditiveExpression());
+            result.children.push(this.parseAdditiveExpression());
         }
-        return result.numChildren() > 1 ? result
-            : result.getChild(0);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
+        return result.children.length > 1 ? result : result.children[0];
     }
 
     /**
@@ -1750,15 +1524,12 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseSwitch(): Node {
-       this. consume(KeyWords.SWITCH);
-        var result: Node = Node.create(NodeKind.SWITCH,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseCondition());
+        var tok = this.consume(KeyWords.SWITCH);
+        var result: Node = new Node(NodeKind.SWITCH, tok.index, tok.end, null, [this.parseCondition()]);
         if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
             this.nextToken();
-            result.addChild(this.parseSwitchCases());
-           this. consume(Operators.RIGHT_CURLY_BRACKET);
+            result.children.push(this.parseSwitchCases());
+            result.end = this.consume(Operators.RIGHT_CURLY_BRACKET).end;
         }
         return result;
     }
@@ -1769,13 +1540,13 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseSwitchBlock(): Node {
-        var result: Node = Node.create(NodeKind.SWITCH_BLOCK,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        while (!this.tokIs(KeyWords.CASE)
-            && !this.tokIs(KeyWords.DEFAULT) && !this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
-            result.addChild(this.parseStatement());
+        var result: Node = new Node(NodeKind.SWITCH_BLOCK, this.tok.index, this.tok.end);
+        while (!this.tokIs(KeyWords.CASE) && !this.tokIs(KeyWords.DEFAULT) && !this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
+            result.children.push(this.parseStatement());
         }
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
@@ -1785,38 +1556,37 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseSwitchCases(): Node {
-        var result: Node = Node.create(NodeKind.CASES,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.CASES, this.tok.index, this.tok.end);
         for (; ;) {
             if (this.tokIs(Operators.RIGHT_CURLY_BRACKET)) {
                 break;
             }
             else if (this.tokIs(KeyWords.CASE)) {
+                var index = this.tok.index;
                 this.nextToken(true); // case
-                var caseNode: Node = Node.create(NodeKind.CASE,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    this.parseExpression());
-               this. consume(Operators.COLUMN);
-                caseNode.addChild(this.parseSwitchBlock());
-                result.addChild(caseNode);
+                var expr = this.parseExpression();
+                var caseNode: Node = new Node(NodeKind.CASE, index, expr.end, null, [this.parseExpression()]);
+                this.consume(Operators.COLUMN);
+                var block = this.parseSwitchBlock();
+                caseNode.children.push(block);
+                caseNode.end = block.end
+                result.children.push(caseNode);
             }
             else if (this.tokIs(KeyWords.DEFAULT)) {
+                var index = this.tok.index;
                 this.nextToken(true); // default
-               this. consume(Operators.COLUMN);
-                var caseNode: Node = Node.create(NodeKind.CASE,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    Node.create(NodeKind.DEFAULT,
-                        this.tok.getLine(),
-                        this.tok.getColumn(),
-                        null,
-                        KeyWords.DEFAULT.toString()));
-                caseNode.addChild(this.parseSwitchBlock());
-                result.addChild(caseNode);
+                this.consume(Operators.COLUMN);
+                var caseNode: Node = new Node(NodeKind.CASE, index, -1, null,  
+                    [new Node(NodeKind.DEFAULT, index, this.tok.end, KeyWords.DEFAULT )]);
+                var block = this.parseSwitchBlock();
+                caseNode.end = block.end
+                caseNode.children.push(block);
+                result.children.push(caseNode);
             }
         }
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child ? child.end: 0);
+        }, result.end);
         return result;
     }
 
@@ -1826,72 +1596,58 @@ class AS3Parser {
      * 
      * @throws TokenException
      */
-    private parseTraditionalFor(): Node {
-       this. consume(Operators.LEFT_PARENTHESIS);
+    private parseTraditionalFor(index: number): Node {
+        this.consume(Operators.LEFT_PARENTHESIS);
 
-        var result: Node = Node.create(NodeKind.FOR,
-            this.tok.getLine(),
-            this.tok.getColumn());
+        var result: Node = new Node(NodeKind.FOR, index, -1);
         if (!this.tokIs(Operators.SEMI_COLUMN)) {
             if (this.tokIs(KeyWords.VAR)) {
-                result.addChild(Node.create(NodeKind.INIT,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    this.parseVarList(null,
-                        null)));
+                var varList = this.parseVarList(null, null)
+                result.children.push(new Node(NodeKind.INIT, varList.start, varList.end, null, []));
             }
             else {
                 this.isInFor = true;
-                result.addChild(Node.create(NodeKind.INIT,
-                    this.tok.getLine(),
-                    this.tok.getColumn(),
-                    this.parseExpression()));
+                var expr = this.parseExpression();
+                result.children.push(new Node(NodeKind.INIT, expr.start, expr.end, null, []));
                 this.isInFor = false;
             }
-            if (this.tokIs(NodeKind.IN.toString())) {
+            if (this.tokIs(NodeKind.IN)) {
                 return this.parseForIn(result);
             }
         }
-       this. consume(Operators.SEMI_COLUMN);
+        this.consume(Operators.SEMI_COLUMN);
         if (!this.tokIs(Operators.SEMI_COLUMN)) {
-            result.addChild(Node.create(NodeKind.COND,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression()));
+            var expr = this.parseExpression()
+            result.children.push(new Node(NodeKind.COND, expr.start, expr.end,  null, [expr]));
         }
-       this. consume(Operators.SEMI_COLUMN);
+        this.consume(Operators.SEMI_COLUMN);
         if (!this.tokIs(Operators.RIGHT_PARENTHESIS)) {
-            result.addChild(Node.create(NodeKind.ITER,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpressionList()));
+            var expr = this.parseExpressionList()
+            result.children.push(new Node(NodeKind.ITER, expr.start, expr.end, null, [this.parseExpressionList()]));
         }
-       this. consume(Operators.RIGHT_PARENTHESIS);
-        result.addChild(this.parseStatement());
+        this.consume(Operators.RIGHT_PARENTHESIS);
+        result.children.push(this.parseStatement());
         return result;
     }
 
     private parseTry(): Node {
         var result: Node;
+        var index = this.tok.index;
         this.nextToken(true);
-        result = Node.create(NodeKind.TRY,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            this.parseBlock());
+        var block = this.parseBlock();
+        result = new Node(NodeKind.TRY, index, block.end, null, [block]);
         return result;
     }
 
     private parseType(): Node {
         var result: Node;
-        if (this.tok.getText() === VECTOR) {
+        if (this.tok.text === VECTOR) {
             result = this.parseVector();
         }
         else {
-            result = Node.create(NodeKind.TYPE,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.parseQualifiedName(true));
+            var index = this.tok.index,
+                name = this.parseQualifiedName(true);
+            result = new Node(NodeKind.TYPE,index, index + name.length, name);
             // this.nextToken( true );
         }
         return result;
@@ -1899,41 +1655,31 @@ class AS3Parser {
 
     private parseUnaryExpressionNotPlusMinus(): Node {
         var result: Node;
+        var index = this.tok.index
         if (this.tokIs(KeyWords.DELETE)) {
             this.nextToken(true);
-            result = Node.create(NodeKind.DELETE,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.DELETE, index, expr.end, null, [expr]);
         }
         else if (this.tokIs(KeyWords.VOID)) {
             this.nextToken(true);
-            result = Node.create(NodeKind.VOID,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.VOID, index, expr.end, null, [expr]);
         }
         else if (this.tokIs(KeyWords.TYPEOF)) {
             this.nextToken(true);
-            result = Node.create(NodeKind.TYPEOF,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.TYPEOF, index, expr.end, null, [expr]);
         }
-        else if (this.tokIs("!")
-            || this.tokIs("not")) {
+        else if (this.tokIs("!") || this.tokIs("not")) {
             this.nextToken(true);
-            result = Node.create(NodeKind.NOT,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.NOT, index, expr.end, null, [expr]);
         }
         else if (this.tokIs("~")) {
             this.nextToken(true);
-            result = Node.create(NodeKind.B_NOT,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                this.parseExpression());
+            var expr = this.parseExpression();
+            result = new Node(NodeKind.B_NOT, index, expr.end, null, [expr]);
         }
         else {
             result = this.parseUnaryPostfixExpression();
@@ -1956,29 +1702,25 @@ class AS3Parser {
         else if (this.tokIs(Operators.DECREMENT)) {
             node = this.parseDecrement(node);
         }
-        else if (this.tokIs(Operators.DOT)
-            || this.tokIs(Operators.DOUBLE_COLUMN)) {
+        else if (this.tokIs(Operators.DOT) || this.tokIs(Operators.DOUBLE_COLUMN)) {
             node = this.parseDot(node);
         }
         return node;
     }
 
     private parseUse(): Node {
-       this. consume(KeyWords.USE);
-       this. consume(KeyWords.NAMESPACE);
-        var result: Node = Node.create(NodeKind.USE,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            this.parseNamespaceName());
+        var tok = this.consume(KeyWords.USE);
+        this.consume(KeyWords.NAMESPACE);
+        var nameIndex = this.tok.index;
+        var namespace = this.parseNamespaceName();
+        var result: Node = new Node(NodeKind.USE, tok.index, nameIndex + name.length, namespace);
         this.skip(Operators.SEMI_COLUMN);
         return result;
     }
 
     private parseVar(): Node {
         var result: Node;
-        result = this.parseVarList(null,
-            null);
+        result = this.parseVarList(null, null);
         this.skip(Operators.SEMI_COLUMN);
         return result;
     }
@@ -1991,30 +1733,30 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseVarList(meta: Node [], modifiers: Token []): Node {
-       this. consume(KeyWords.VAR);
-        var result: Node = Node.create(NodeKind.VAR_LIST,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(this.convertMeta(meta));
-        result.addChild(this.convertModifiers(modifiers));
+        var tok = this.consume(KeyWords.VAR);
+        var result: Node = new Node(NodeKind.VAR_LIST, tok.index, tok.end);
+        result.children.push(this.convertMeta(meta));
+        result.children.push(this.convertModifiers(modifiers));
         this.collectVarListContent(result);
+        result.start = result.children.reduce((index: number, child: Node) => {
+            return Math.min(index, child? child.start: Infinity);
+        }, tok.index);
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, tok.end);
         return result;
     }
 
     private parseVector(): Node {
-        var result: Node = Node.create(NodeKind.VECTOR,
-            this.tok.getLine(),
-            this.tok.getColumn(),
-            null,
-            "");
-        if (this.tok.getText() === "Vector") {
+        var result: Node = new Node(NodeKind.VECTOR, this.tok.index, -1, "");
+        if (this.tok.text === "Vector") {
             this.nextToken();
         }
-       this. consume(Operators.VECTOR_START);
+        this.consume(Operators.VECTOR_START);
 
-        result.addChild(this.parseType());
+        result.children.push(this.parseType());
 
-       this. consume(Operators.SUPERIOR);
+        result.end = this.consume(Operators.SUPERIOR).end;
 
         return result;
     }
@@ -2025,12 +1767,13 @@ class AS3Parser {
      * @throws TokenException
      */
     private parseWhile(): Node {
-       this. consume(KeyWords.WHILE);
-        var result: Node = Node.create(NodeKind.WHILE,
-            this.tok.getLine(),
-            this.tok.getColumn());
-        result.addChild(this.parseCondition());
-        result.addChild(this.parseStatement());
+        var tok = this.consume(KeyWords.WHILE);
+        var result: Node = new Node(NodeKind.WHILE, tok.index, tok.end);
+        result.children.push(this.parseCondition());
+        result.children.push(this.parseStatement());
+        result.end = result.children.reduce((index: number, child: Node) => {
+            return Math.max(index, child? child.end : 0);
+        }, tok.end);
         return result;
     }
 
@@ -2058,25 +1801,17 @@ class AS3Parser {
      * @return true, if tok's text property equals the parameter
      */
     private tokIs(text: string): boolean {
-        return this.tok.getText() ===  text;
+        return this.tok.text ===  text;
     }
 
     private tryToParseCommentNode(result: Node,
         modifiers: Token []): void {
-        if (startsWith(this.tok.getText(), ASDOC_COMMENT)) {
-            this.currentAsDoc = Node.create(NodeKind.AS_DOC,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText());
+        if (startsWith(this.tok.text, ASDOC_COMMENT)) {
+            this.currentAsDoc = new Node(NodeKind.AS_DOC, this.tok.index, this.tok.end, this.tok.text);
             this.nextToken();
         }
-        else if (startsWith(this.tok.getText(),MULTIPLE_LINES_COMMENT)) {
-            result.addChild(Node.create(NodeKind.MULTI_LINE_COMMENT,
-                this.tok.getLine(),
-                this.tok.getColumn(),
-                null,
-                this.tok.getText()));
+        else if (startsWith(this.tok.text,MULTIPLE_LINES_COMMENT)) {
+            result.children.push(new Node(NodeKind.MULTI_LINE_COMMENT, this.tok.index, this.tok.end, this.tok.text));
             this.nextToken();
         }
         else {

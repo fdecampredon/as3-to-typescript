@@ -30,11 +30,10 @@
  */
 
 
-/// <reference path="./sax.d.ts" />
+/// <reference path="../declarations/sax.d.ts" />
 
 import Token = require('./token');
 import sax = require('sax');
-import StringBuffer = require('./stringBuffer');
 
 var END: string = '__END__';
 
@@ -53,7 +52,7 @@ function verifyXML(string: string) {
     var parser = sax.parser(true),
         result = true;
     
-    parser.onerror = function (e) {
+    parser.onerror = function (e:any) {
         result = false;
     };
 
@@ -69,10 +68,9 @@ function verifyXML(string: string) {
  */
 class AS3Scanner {
 
-    private column: number;
     private inVector: boolean;
-    private line: number;
-    private lines: string[] = null;
+    private index: number;
+    private content: string = '';
 
     /**
      * @return
@@ -84,10 +82,9 @@ class AS3Scanner {
     /**
      * @param linesToBeSet
      */
-    public setLines(linesToBeSet: string[]): void {
-        this.lines = linesToBeSet;
-        this.line = 0;
-        this.column = -1;
+    public setContent(content: string): void {
+        this.content = content;
+        this.index = -1;
     }
 
     isHexChar(currentCharacter: string): boolean {
@@ -103,14 +100,14 @@ class AS3Scanner {
     public nextToken(): Token {
         var currentCharacter: string;
 
-        if (this.lines != null && this.line < this.lines.length) {
+        if (this.content != null && this.index < this.content.length) {
             currentCharacter = this.nextNonWhitespaceCharacter();
         }  else {
-            return new Token(END, this.line, this.column);
+            return new Token(END, this.index);
         }
 
         if (currentCharacter === '\n') {
-            return new Token('\n', this.line, this.column);
+            return new Token('\n', this.index);
         } else if (currentCharacter === '/') {
             return this.scanCommentRegExpOrOperator();
         } else if (currentCharacter === '"') {
@@ -160,7 +157,7 @@ class AS3Scanner {
     }
 
     private computePossibleMatchesMaxLength(possibleMatches: string[]): number {
-        return possibleMatches.reduce((max: number, possibleMatch) => {
+        return possibleMatches.reduce((max: number, possibleMatch: string) => {
             return Math.max(max, possibleMatch.length);
         }, 0);
     }
@@ -198,20 +195,13 @@ class AS3Scanner {
 
 
     private nextChar(): string {
-        var currentLine: string = this.lines[this.line];
 
-        this.column++;
-        if (currentLine.length <= this.column) {
-            this.column = -1;
-            this.line++;
-            return '\n';
-        }
-
-        var currentChar = currentLine.charAt(this.column);
+        this.index++;
+        var currentChar = this.content.charAt(this.index);
 
         while (currentChar == '\uFEFF') {
-            this.column++;
-            currentChar = currentLine.charAt(this.column);
+            this.index++;
+            currentChar = this.content.charAt(this.index);
         }
         return currentChar;
     }
@@ -226,17 +216,11 @@ class AS3Scanner {
     }
 
     private peekChar(offset: number): string {
-        var currentLine: string = this.lines[this.line];
-        var index = this.column
-            + offset;
+        var index = this.index + offset;
         if (index == -1) {
             return '\0';
         }
-        if (index >= currentLine.length) {
-            return '\n';
-        }
-
-        return currentLine.charAt(index);
+        return this.content.charAt(index);
     }
 
     /**
@@ -249,13 +233,13 @@ class AS3Scanner {
      */
     private scanCharacterSequence(currentCharacter: string, possibleMatches: string[]): Token {
         var peekPos = 1;
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer: string = '';
         var maxLength: number = this.computePossibleMatchesMaxLength(possibleMatches);
 
-        buffer.append(currentCharacter);
+        buffer += currentCharacter;
         var found: string = buffer.toString();
         while (peekPos < maxLength) {
-            buffer.append(this.peekChar(peekPos));
+            buffer +=  this.peekChar(peekPos);
             peekPos++;
             for (var i = 0; i < possibleMatches.length; i++) {
                 var possibleMatche = possibleMatches[i];
@@ -264,7 +248,7 @@ class AS3Scanner {
                 }
             }
         }
-        var result: Token = new Token(found, this.line, this.column);
+        var result: Token = new Token(found, this.index);
         this.skipChars(found.length - 1);
         return result;
     }
@@ -298,11 +282,11 @@ class AS3Scanner {
         }
 
         if (firstCharacter == '=') {
-            result = new Token('/=', this.line, this.column);
+            result = new Token('/=', this.index);
             this.skipChars(1);
             return result;
         }
-        result = new Token('/', this.line, this.column);
+        result = new Token('/', this.index);
         return result;
     }
 
@@ -313,33 +297,33 @@ class AS3Scanner {
      */
     private scanDecimal(currentCharacter: string): Token {
         var currentChar = currentCharacter;
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer: string = '';
         var peekPos = 1;
 
         while (isDecimalChar(currentChar)) {
-            buffer.append(currentChar);
+            buffer += currentChar;
             currentChar = this.peekChar(peekPos++);
         }
 
         if (currentChar == '.') {
-            buffer.append(currentChar);
+            buffer += currentChar;
             currentChar = this.peekChar(peekPos++);
 
             while (isDecimalChar(currentChar)) {
-                buffer.append(currentChar);
+                buffer += currentChar;
                 currentChar = this.peekChar(peekPos++);
             }
 
             if (currentChar == 'E') {
-                buffer.append(currentChar);
+                buffer += currentChar;
                 currentChar = this.peekChar(peekPos++);
                 while (isDecimalChar(currentChar)) {
-                    buffer.append(currentChar);
+                    buffer += currentChar;
                     currentChar = this.peekChar(peekPos++);
                 }
             }
         }
-        var result: Token = new Token(buffer.toString(), this.line, this.column, true);
+        var result: Token = new Token(buffer.toString(), this.index, true);
         this.skipChars(result.text.length - 1);
         return result;
     }
@@ -356,14 +340,14 @@ class AS3Scanner {
             var thirdCharacter: string = this.peekChar(2);
             var text: string = thirdCharacter == '.' ? '...'
                 : '..';
-            var result: Token = new Token(text, this.line, this.column);
+            var result: Token = new Token(text, this.index);
 
             this.skipChars(text.length - 1);
 
             return result;
         }
         else if (secondCharacter == '<') {
-            var result: Token = new Token('.<', this.line, this.column);
+            var result: Token = new Token('.<', this.index);
 
             this.skipChars(1);
 
@@ -379,9 +363,9 @@ class AS3Scanner {
      * @return
      */
     private scanHex(): Token {
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';
 
-        buffer.append('0x');
+        buffer+= '0x';
         var peekPos = 2;
         for (; ;) {
             var character: string = this.peekChar(peekPos++);
@@ -389,9 +373,9 @@ class AS3Scanner {
             if (!this.isHexChar(character)) {
                 break;
             }
-            buffer.append(character);
+            buffer+= character;
         }
-        var result: Token = new Token(buffer.toString(), this.line, this.column, true);
+        var result: Token = new Token(buffer, this.index, true);
         this.skipChars(result.text.length - 1);
         return result;
     }
@@ -402,21 +386,20 @@ class AS3Scanner {
      * @return
      */
     private scanMultiLineComment(): Token {
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';
         var currentCharacter = ' ';
         var previousCharacter = ' ';
 
-        buffer.append('/*');
+        buffer += '/*';
         this.skipChar();
         do {
             previousCharacter = currentCharacter;
             currentCharacter = this.nextChar();
-            buffer.append(currentCharacter);
+            buffer +=  currentCharacter;
         }
-        while (currentCharacter != '0'
-            && !(currentCharacter === '/' && previousCharacter == '*'));
+        while (currentCharacter && !(currentCharacter === '/' && previousCharacter == '*'));
 
-        return new Token(buffer.toString(), this.line, this.column);
+        return new Token(buffer.toString(), this.index);
     }
 
     /**
@@ -434,7 +417,7 @@ class AS3Scanner {
 
             var firstCharacter: string = this.peekChar(1);
             if (!isDecimalChar(firstCharacter)) {
-                return new Token('.', this.line, this.column);
+                return new Token('.', this.index);
             }
         }
         if (characterToBeScanned == '0') {
@@ -456,7 +439,7 @@ class AS3Scanner {
     }
 
     private scanSingleCharacterToken(character: string): Token {
-        return new Token(character, this.line, this.column);
+        return new Token(character, this.index);
     }
 
     /**
@@ -466,9 +449,18 @@ class AS3Scanner {
      * @return
      */
     private scanSingleLineComment(): Token {
-        var result: Token = new Token(this.lines[this.line].substring(this.column), this.line, this.column);
+        /*var result: Token = new Token(this.lines[this.line].substring(this.column), this.index);
         this.skipChars(result.text.length - 1);
-        return result;
+        return result;*/
+        var char: string,
+            buffer = '';
+        do {
+            char = this.nextChar();
+            buffer +=  char;
+        }
+        while (char !== '\n');
+
+        return new Token(buffer.toString(), this.index);
     }
 
     /**
@@ -487,23 +479,21 @@ class AS3Scanner {
         if (typeof delimiter === 'undefined') {
             delimiter = start;
         }
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';;
         var peekPos = 1;
         var numberOfBackslashes = 0;
 
-        buffer.append(start);
+        buffer += start;
 
         for (; ;) {
             var currentCharacter: string = this.peekChar(peekPos++);
             if (currentCharacter === '\n') {
                 return null;
             }
-            buffer.append(currentCharacter);
+            buffer += currentCharacter;
             if (currentCharacter === delimiter
                 && numberOfBackslashes == 0) {
-                var result = Token.create(buffer.toString(),
-                    this.line,
-                    this.column);
+                var result = new Token(buffer, this.index);
                 this.skipChars(buffer.toString().length - 1);
                 return result;
             }
@@ -514,9 +504,9 @@ class AS3Scanner {
 
     private scanWord(startingCharacter: string): Token {
         var currentChar = startingCharacter;
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';;
 
-        buffer.append(currentChar);
+        buffer += currentChar;
         var peekPos = 1;
         for (; ;) {
             currentChar = this.peekChar(peekPos++);
@@ -524,9 +514,9 @@ class AS3Scanner {
                 break;
             }
 
-            buffer.append(currentChar);
+            buffer += currentChar;
         }
-        var result: Token = new Token(buffer.toString(), this.line, this.column);
+        var result: Token = new Token(buffer.toString(), this.index);
         this.skipChars(buffer.toString().length - 1);
         return result;
     }
@@ -537,10 +527,9 @@ class AS3Scanner {
      * @return
      */
     private scanXML(): Token {
-        var currentLine: number = this.line;
-        var currentColumn: number = this.column;
+        var currentIndex: number = this.index;
         var level = 0;
-        var buffer: StringBuffer = new StringBuffer();
+        var buffer = '';;
         var currentCharacter = '<';
 
         for (; ;) {
@@ -549,15 +538,14 @@ class AS3Scanner {
                 currentToken = this.scanUntilDelimiter('<',
                     '>');
                 if (currentToken == null) {
-                    this.line = currentLine;
-                    this.column = currentColumn;
+                    this.index = currentIndex;
                     return null;
                 }
-                buffer.append(currentToken.text);
+                buffer += currentToken.text;
                 if (this.isProcessingInstruction(currentToken.text)) {
                     currentCharacter = this.nextChar();
                     if (currentCharacter === '\n') {
-                        buffer.append('\n');
+                        buffer += '\n';
                         this.skipChar();
                     }
                     currentToken = null;
@@ -575,7 +563,7 @@ class AS3Scanner {
             }
 
             if (level <= 0) {
-                return new Token(buffer.toString(), this.line, this.column);
+                return new Token(buffer.toString(), this.index);
             }
 
             for (; ;) {
@@ -583,7 +571,7 @@ class AS3Scanner {
                 if (currentCharacter === '<') {
                     break;
                 }
-                buffer.append(currentCharacter);
+                buffer += currentCharacter;
             }
         }
     }
