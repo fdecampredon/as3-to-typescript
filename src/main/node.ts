@@ -25,6 +25,16 @@ class Node {
         return this.children.filter(child => child.kind === type);
     }
     
+    getChildFrom(type: string) {
+        var child = this.findChild(type);
+        if (!child) {
+            return this.children.splice(0)
+        } else {
+            var index = this.children.indexOf(child);
+            return this.children.slice(index + 1);
+        }
+    }
+    
     get lastChild(): Node {
         return this.children[this.children.length -1];
     }

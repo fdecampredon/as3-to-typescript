@@ -4,7 +4,10 @@
   "description": "convert as3 code base to typescript",
   "main": "index.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "node test/runner generate && node test/runner compare",
+    "generate": "node test/runner generate",
+    "accept": "node test/runner accept",
+    "compile": "tsc --module 'commonjs' --outDir lib --target es5 src/main/parser.ts src/main/emitter.ts"
   },
   "keywords": [
     "actionscript",
@@ -16,5 +19,8 @@
   "license": "Apache Licence V2",
   "dependencies": {
     "sax": "~0.6.0"
+  },
+  "devDependencies": {
+    "typescript": "~1.0.0"
   }
 }
