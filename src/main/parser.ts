@@ -1756,7 +1756,7 @@ class AS3Parser {
         this.consume(Operators.SEMI_COLUMN);
         if (!this.tokIs(Operators.RIGHT_PARENTHESIS)) {
             var expr = this.parseExpressionList()
-            result.children.push(new Node(NodeKind.ITER, expr.start, expr.end, null, [this.parseExpressionList()]));
+            result.children.push(new Node(NodeKind.ITER, expr.start, expr.end, null, [expr]));
         }
         this.consume(Operators.RIGHT_PARENTHESIS);
         result.children.push(this.parseStatement());
