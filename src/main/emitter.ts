@@ -121,7 +121,7 @@ class Emitter {
     
     private emitInclude(node: Node) {
         this.catchup(node.start);
-        this.commentNode(node);
+        this.commentNode(node, true);
     }
     
     private emitImport(node: Node) {
@@ -132,7 +132,7 @@ class Emitter {
     }
     
     private emitInterface(node: Node) {
-        this.emitTopLevelType(node);
+        this.emitDeclaration(node);
        
         
         //we'll catchup the other part
@@ -169,7 +169,7 @@ class Emitter {
                             this.skipTo(node.end);
                         }
                     } else {
-                        this.commentNode(node);
+                        this.commentNode(node, true);
                     }
                 } else {
                     //include or import in interface content not supported
@@ -180,16 +180,85 @@ class Emitter {
     }
     
     private emitFunction(node: Node) {
-        this.emitTopLevelType(node);
+        this.emitDeclaration(node);
         var rest = node.getChildFrom(NodeKind.MOD_LIST);
         this.visitNodes(rest);
     }
     
     private emitClass(node: Node) {
-        this.emitTopLevelType(node);
+        this.emitDeclaration(node);
+        var content = node.findChild(NodeKind.CONTENT)
+        var contentsNode = content && content.children;
+        if (contentsNode) {
+            contentsNode.forEach(node => {
+                this.visitNode(node.findChild(NodeKind.META_LIST));
+                this.catchup(node.start);
+                switch (node.kind) {
+                    case NodeKind.SET:
+                        this.emitSet(node);
+                        break;
+                    case NodeKind.GET:
+                    case NodeKind.FUNCTION:
+                        this.emitMethod(node);
+                        break;
+                    case NodeKind.VAR_LIST:
+                        this.emitPropertyDecl(node);
+                        break;
+                    case NodeKind.CONST_LIST:
+                        this.emitPropertyDecl(node, true);
+                        break;
+                    default:
+                        this.visitNode(node);
+                }
+            })
+        }
     }
     
-    private emitTopLevelType(node: Node) {
+    
+    private emitSet(node: Node) {
+        this.emitClassField(node);
+        var name = node.findChild(NodeKind.NAME);
+        this.consume('function', name.start);
+        var params = node.findChild(NodeKind.PARAMETER_LIST)
+        this.visitNode(params);
+        this.catchup(params.end)
+        var type = node.findChild(NodeKind.TYPE);
+        if (type) {
+            this.skipTo(type.end);
+        }
+        this.visitNodes(node.getChildFrom(NodeKind.TYPE));
+    }
+    
+    private emitMethod(node: Node) {
+        this.emitClassField(node);
+        var name = node.findChild(NodeKind.NAME);
+        this.consume('function', name.start);
+        this.catchup(name.end)
+        this.visitNodes(node.getChildFrom(NodeKind.NAME));
+    }
+    
+    private emitPropertyDecl(node: Node, isConst = false) {
+        this.emitClassField(node);
+        var name = node.findChild(NodeKind.NAME_TYPE_INIT);
+        this.consume(isConst ? 'const': 'var', name.start);
+        this.visitNode(name);
+    }
+    
+    private emitClassField(node: Node) {
+        var mods = node.findChild(NodeKind.MOD_LIST);
+        if (mods) {
+            this.catchup(mods.start);
+            mods.children.forEach(node => {
+                this.catchup(node.start);
+                if (node.text !== 'private' && node.text !== 'public' && node.text !== 'static') {
+                    this.commentNode(node, false);
+                }  
+                this.catchup(node.end);
+            });
+        }
+    }
+    
+    private emitDeclaration(node: Node) {
         this.catchup(node.start);
         this.visitNode(node.findChild(NodeKind.META_LIST));
         var mods = node.findChild(NodeKind.MOD_LIST);
@@ -268,7 +337,7 @@ class Emitter {
     }
     
     
-    private commentNode(node: Node, catchSemi = true) {
+    private commentNode(node: Node, catchSemi:boolean) {
         this.insert('/*');
         this.catchup(node.end);
         var index = this.index;
@@ -310,6 +379,14 @@ class Emitter {
     
     private insert(string: string) {
         this.output += string;
+    }
+    
+    private consume(string: string, limit: number) {
+        var index = this.content.indexOf(string, this.index) + string.length;
+        if (index > limit || index < this.index) {
+            throw new Error('invalid consume');
+        }
+        this.index = index;
     }
 }
 

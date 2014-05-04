@@ -1937,14 +1937,13 @@ class AS3Parser {
         return this.tok.text === text;
     }
 
-    private tryToParseCommentNode(result: Node,
-        modifiers: Token[]): void {
+    private tryToParseCommentNode(result: Node, modifiers: Token[]): void {
         if (startsWith(this.tok.text, ASDOC_COMMENT)) {
-            this.currentAsDoc = new Node(NodeKind.AS_DOC, this.tok.index, this.tok.end, this.tok.text);
+            this.currentAsDoc = new Node(NodeKind.AS_DOC, this.tok.index, -1, this.tok.text);
             this.nextToken();
         }
         else if (startsWith(this.tok.text, MULTIPLE_LINES_COMMENT)) {
-            result.children.push(new Node(NodeKind.MULTI_LINE_COMMENT, this.tok.index, this.tok.end, this.tok.text));
+            result.children.push(new Node(NodeKind.MULTI_LINE_COMMENT, this.tok.index, -1, this.tok.text));
             this.nextToken();
         }
         else {
