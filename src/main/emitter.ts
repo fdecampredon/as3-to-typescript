@@ -88,6 +88,9 @@ class Emitter {
             case NodeKind.INTERFACE:
                 this.emitInterface(node);
                 break;
+            case NodeKind.CLASS:
+                this.emitClass(node);
+                break;
             case NodeKind.VECTOR:
                 this.emitVector(node);
                 break;
@@ -180,6 +183,10 @@ class Emitter {
         this.emitTopLevelType(node);
         var rest = node.getChildFrom(NodeKind.MOD_LIST);
         this.visitNodes(rest);
+    }
+    
+    private emitClass(node: Node) {
+        this.emitTopLevelType(node);
     }
     
     private emitTopLevelType(node: Node) {
@@ -301,16 +308,13 @@ class Emitter {
         this.index += number;
     }
     
-    
     private insert(string: string) {
         this.output += string;
     }
 }
 
 module Emitter {
-    export interface EmitterOptions {
-        lineSeparator: string;
-    }
+    export interface EmitterOptions { }
 }
 
 export = Emitter;
