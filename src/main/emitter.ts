@@ -198,7 +198,7 @@ class Emitter {
             var insertExport = false;
             mods.children.forEach(node => {
                 if (node.text !== 'private') {
-                    this.insert('export');
+                    insertExport = true;
                 }  
                 this.skipTo(node.end);
             }) 
