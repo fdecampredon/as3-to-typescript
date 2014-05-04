@@ -453,7 +453,7 @@ class AS3Scanner {
         this.skipChars(result.text.length - 1);
         return result;*/
         var char: string,
-            buffer = '';
+            buffer = this.content[this.index];
         do {
             char = this.nextChar();
             buffer +=  char;
