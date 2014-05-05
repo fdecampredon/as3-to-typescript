@@ -40,6 +40,9 @@ class Emitter {
     private options: Emitter.EmitterOptions;
     private ast: Node;
     
+    //state
+    private isNew: boolean;
+    
     constructor(
         ast: Node,
         private content: string,
@@ -99,6 +102,15 @@ class Emitter {
                 break;
             case NodeKind.CALL:
                 this.emitCall(node);
+                break;
+            case NodeKind.NEW:
+                this.emitNew(node);
+                break;
+            case NodeKind.RELATION:
+                this.emitRelation(node);
+                break;
+            case NodeKind.OP:
+                this.emitOp(node);
                 break;
             default:
                 this.catchup(node.start);
@@ -262,7 +274,7 @@ class Emitter {
         this.catchup(node.start);
         this.visitNode(node.findChild(NodeKind.META_LIST));
         var mods = node.findChild(NodeKind.MOD_LIST);
-        if (mods) {
+        if (mods && mods.children.length) {
             this.catchup(mods.start);
             var insertExport = false;
             mods.children.forEach(node => {
@@ -318,9 +330,36 @@ class Emitter {
         this.skipTo(node.end);
     }
     
+    private emitNew(node:Node) {
+        this.catchup(node.start);
+        this.isNew = true;
+        this.visitNodes(node.children);
+        this.isNew = false;
+    }
+    
     private emitCall(node: Node) {
         this.catchup(node.start);
+        var isNew = this.isNew;
+        this.isNew = false;
         if (node.children[0].kind === NodeKind.VECTOR) {
+            if (isNew) {
+                var vector = node.children[0];
+                this.catchup(vector.start);
+                this.insert('Array');
+                this.insert('<')
+                var type = vector.findChild(NodeKind.TYPE);
+                if (type) {
+                    this.skipTo(type.start);
+                    this.emitType(type);
+                } else {
+                    this.insert('any');
+                }
+                this.skipTo(vector.end);
+                this.insert('>');
+                this.visitNodes(node.getChildFrom(NodeKind.VECTOR));
+                return;
+            }
+            
             var args = node.findChild(NodeKind.ARGUMENTS);
             //vector conversion lets just cast to array
             if (args.children.length === 1) {
@@ -331,9 +370,38 @@ class Emitter {
                 this.visitNode(args.children[0]);
                 this.catchup(node.end);
                 return;
-            } 
+            }
         } 
         this.visitNodes(node.children);
+    }
+    
+    private emitRelation(node: Node) {
+        this.catchup(node.start);
+        var as = node.findChild(NodeKind.AS);
+        if (as) {
+            if (node.lastChild.kind === NodeKind.PRIMARY) {
+                this.insert('<');
+                this.insert(node.lastChild.text);
+                this.insert('>');
+                this.visitNodes(node.getChildUntil(NodeKind.AS));
+                this.catchup(as.start);
+                this.skipTo(node.end);
+            } else {
+                this.commentNode(node, false);
+            }
+            return;
+        }
+        this.visitNodes(node.children)
+    }
+    
+    private emitOp(node: Node) {
+        this.catchup(node.start);
+        if (node.text === "is") {
+            this.insert('instanceof');
+            this.skipTo(node.end);
+            return;
+        }
+        this.catchup(node.end);
     }
     
     

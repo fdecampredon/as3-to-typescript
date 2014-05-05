@@ -11,7 +11,7 @@ var Operators = {
    DECREMENT: "--",
    DIVIDED_EQUAL: "/=",
    DOT: ".",
-   DOUBLE_COLUMN: "==",
+   DOUBLE_COLUMN: "::",
    DOUBLE_EQUAL: "==",
    DOUBLE_EQUAL_AS2: "eq",
    DOUBLE_QUOTE: "\"",

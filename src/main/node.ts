@@ -35,6 +35,16 @@ class Node {
         }
     }
     
+    getChildUntil(type: string) {
+        var child = this.findChild(type);
+        if (!child) {
+            return this.children.splice(0)
+        } else {
+            var index = this.children.indexOf(child);
+            return this.children.slice(0, index);
+        }
+    }
+    
     get lastChild(): Node {
         return this.children[this.children.length -1];
     }

@@ -962,7 +962,9 @@ class AS3Parser {
         }
         var result: Node = new Node(NodeKind.DOT, this.tok.index, -1);
         result.children.push(node);
-        result.children.push(this.parseExpression());
+        result.children.push(new Node(NodeKind.PRIMARY, this.tok.index, this.tok.end, this.tok.text))
+        this.nextToken(true);
+        //result.children.push(this.parseExpression());
         result.end = result.children.reduce((index: number, child: Node) => {
             return Math.max(index, child ? child.end : 0);
         }, 0);
@@ -1581,8 +1583,7 @@ class AS3Parser {
 
         buffer += this.tok.text;
         this.nextToken();
-        while (this.tokIs(Operators.DOT)
-            || this.tokIs(Operators.DOUBLE_COLUMN)) {
+        while (this.tokIs(Operators.DOT) || this.tokIs(Operators.DOUBLE_COLUMN)) {
             buffer += this.tok.text;
             this.nextToken();
             buffer += this.tok.text;
@@ -1821,12 +1822,9 @@ class AS3Parser {
     }
 
     private parseUnaryPostfixExpression(): Node {
-        var node: Node = this.parsePrimaryExpression();
+        var node: Node = this.parseAccessExpresion();
 
-        if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
-            node = this.parseArrayAccessor(node);
-        }
-        else if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
+        if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
             node = this.parseFunctionCall(node);
         }
         if (this.tokIs(Operators.INCREMENT)) {
@@ -1835,8 +1833,20 @@ class AS3Parser {
         else if (this.tokIs(Operators.DECREMENT)) {
             node = this.parseDecrement(node);
         }
-        else if (this.tokIs(Operators.DOT) || this.tokIs(Operators.DOUBLE_COLUMN)) {
-            node = this.parseDot(node);
+        return node;
+    }
+    
+    private parseAccessExpresion(): Node {
+        var node: Node = this.parsePrimaryExpression();
+
+        while (true) {
+            if (this.tokIs(Operators.DOT) || this.tokIs(Operators.DOUBLE_COLUMN)) {
+                node = this.parseDot(node);
+            } else if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
+                node = this.parseArrayAccessor(node);
+            } else {
+                break;
+            }
         }
         return node;
     }
