@@ -112,6 +112,9 @@ class Emitter {
             case NodeKind.OP:
                 this.emitOp(node);
                 break;
+             case NodeKind.FOREACH:
+                this.emitForeach(node);
+                break;
             default:
                 this.catchup(node.start);
                 this.visitNodes(node.children);
@@ -402,6 +405,31 @@ class Emitter {
             return;
         }
         this.catchup(node.end);
+    }
+    
+    private emitForeach(node: Node) {
+        this.catchup(node.start);
+        this.commentNode(node, false);
+        /*this.catchup(node.start);
+        this.insert('for');
+        this.skip(4);
+        var name  = node.findChild(NodeKind.NAME);
+        if (name) {
+            this.consume('each', name.start);
+            this.catchup(name.start);
+            this.skipTo(name.end);
+            this.insert('var key');
+            
+            var inNode = node.findChild(NodeKind.IN),
+                arrayText = node.children[0].text,
+                block = node.findChild(NodeKind.BLOCK);
+            
+            this.catchup(block.start);
+            this.consume('{', block.children[0].start);
+            this.insert('{\n' + name.text + ' = ' + arrayText + '[' + 'key' + ']');
+        }
+        
+        this.catchup(node.end);*/
     }
     
     

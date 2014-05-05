@@ -6,33 +6,33 @@
 //  (available at : http://www.hnu.org/licences/old-licenses/lgpl-2.1.html)
 //
 ////////////////////////////////////////////////////////////////////////////////
-package com.deCampredon.spark.components
+module com.deCampredon.spark.components
 {
-	import com.deCampredon.spark.components.supportClass.DateChooserDataGrid;
-	import com.deCampredon.spark.components.supportClass.YearNavigatorSpinner;
-	import com.deCampredon.spark.events.DateChooserScrollEvent;
-	import com.deCampredon.spark.events.DateChooserScrollEventDetail;
-	import com.deCampredon.spark.events.DateChooserSelectionEvent;
+	import DateChooserDataGrid = com.deCampredon.spark.components.supportClass.DateChooserDataGrid;
+	import YearNavigatorSpinner = com.deCampredon.spark.components.supportClass.YearNavigatorSpinner;
+	import DateChooserScrollEvent = com.deCampredon.spark.events.DateChooserScrollEvent;
+	import DateChooserScrollEventDetail = com.deCampredon.spark.events.DateChooserScrollEventDetail;
+	import DateChooserSelectionEvent = com.deCampredon.spark.events.DateChooserSelectionEvent;
 
-	import flash.events.Event;
-	import flash.events.MouseEvent;
+	import Event = flash.events.Event;
+	import MouseEvent = flash.events.MouseEvent;
 
-	import mx.collections.ArrayList;
-	import mx.collections.IList;
-	import mx.controls.DateChooser;
-	import mx.core.IVisualElement;
-	import mx.events.DateChooserEventDetail;
-	import mx.events.FlexEvent;
-	import mx.managers.IFocusManagerComponent;
+	import ArrayList = mx.collections.ArrayList;
+	import IList = mx.collections.IList;
+	import DateChooser = mx.controls.DateChooser;
+	import IVisualElement = mx.core.IVisualElement;
+	import DateChooserEventDetail = mx.events.DateChooserEventDetail;
+	import FlexEvent = mx.events.FlexEvent;
+	import IFocusManagerComponent = mx.managers.IFocusManagerComponent;
 
-	import spark.components.gridClasses.CellPosition;
-	import spark.components.gridClasses.GridColumn;
-	import spark.components.gridClasses.GridSelectionMode;
-	import spark.components.supportClasses.ButtonBase;
-	import spark.components.supportClasses.SkinnableComponent;
-	import spark.core.IDisplayText;
-	import spark.events.GridEvent;
-	import spark.events.GridSelectionEvent;
+	import CellPosition = spark.components.gridClasses.CellPosition;
+	import GridColumn = spark.components.gridClasses.GridColumn;
+	import GridSelectionMode = spark.components.gridClasses.GridSelectionMode;
+	import ButtonBase = spark.components.supportClasses.ButtonBase;
+	import SkinnableComponent = spark.components.supportClasses.SkinnableComponent;
+	import IDisplayText = spark.core.IDisplayText;
+	import GridEvent = spark.events.GridEvent;
+	import GridSelectionEvent = spark.events.GridSelectionEvent;
 
 	//--------------------------------------
 	//  Events
@@ -44,7 +44,7 @@ package com.deCampredon.spark.components
 	 *  @eventType com.deCampredon.sparkDateChooser.events.DateChooserSelectionEvent.SELECTION_CHANGE
 	 *  
 	 */
-	[Event(name="selectionChange", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]
+	/*[Event(name="selectionChange", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]*/
 
 	/**
 	 *  Dispatched when a date is going to be selected.
@@ -54,7 +54,7 @@ package com.deCampredon.spark.components
 	 *  @eventType com.deCampredon.sparkDateChooser.events.DateChooserSelectionEvent.SELECTION_CHANGING
 	 * 
 	 */
-	[Event(name="selectionChanging", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]
+	/*[Event(name="selectionChanging", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]*/
 
 
 	/**
@@ -63,7 +63,7 @@ package com.deCampredon.spark.components
 	 *  @eventType com.deCampredon.sparkDateChooser.events.DateChooserScrollEvent.SCROLL
 	 *  
 	 */
-	[Event(name="scroll", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]
+	/*[Event(name="scroll", type="com.deCampredon.spark.events.DateChooserSelectionEvent")]*/
 
 	//--------------------------------------
 	//  Styles
@@ -93,7 +93,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="color", type="uint", format="Color", inherit="yes")]
+	/*[Style(name="color", type="uint", format="Color", inherit="yes")]*/
 
 	/**
 	 *  The name of the font to use, or a comma-separated list of font names. 
@@ -118,7 +118,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="fontFamily", type="String", inherit="yes")]
+	/*[Style(name="fontFamily", type="String", inherit="yes")]*/
 
 	/**
 	 *  Font lookup to use. 
@@ -135,7 +135,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="fontLookup", type="String", enumeration="auto,device,embeddedCFF", inherit="yes")]
+	/*[Style(name="fontLookup", type="String", enumeration="auto,device,embeddedCFF", inherit="yes")]*/
 
 	/**
 	 *  Height of the text, in pixels.
@@ -160,7 +160,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="fontSize", type="Number", format="Length", inherit="yes", minValue="1.0", maxValue="720.0")]
+	/*[Style(name="fontSize", type="Number", format="Length", inherit="yes", minValue="1.0", maxValue="720.0")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:accentColor
@@ -172,7 +172,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="accentColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="accentColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  Determines whether the text is italic font.
@@ -194,7 +194,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="fontStyle", type="String", enumeration="normal,italic", inherit="yes")]
+	/*[Style(name="fontStyle", type="String", enumeration="normal,italic", inherit="yes")]*/
 
 	/**
 	 *  Determines whether the text is boldface.
@@ -216,7 +216,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="fontWeight", type="String", enumeration="normal,bold", inherit="yes")]
+	/*[Style(name="fontWeight", type="String", enumeration="normal,bold", inherit="yes")]*/
 
 	/**
 	 *  The locale of the text. 
@@ -241,7 +241,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="locale", type="String", inherit="yes")]
+	/*[Style(name="locale", type="String", inherit="yes")]*/
 
 
 
@@ -253,7 +253,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="alternatingItemColors", type="Array", arrayType="uint", format="Color", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="alternatingItemColors", type="Array", arrayType="uint", format="Color", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  Alpha level of the background for this component.
@@ -266,7 +266,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="backgroundAlpha", type="Number", inherit="no", theme="spark, mobile")]
+	/*[Style(name="backgroundAlpha", type="Number", inherit="no", theme="spark, mobile")]*/
 
 	/**
 	 *  Background color of a component.
@@ -278,7 +278,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="backgroundColor", type="uint", format="Color", inherit="no", theme="spark, mobile")]
+	/*[Style(name="backgroundColor", type="uint", format="Color", inherit="no", theme="spark, mobile")]*/
 
 	/**
 	 *  The alpha of the content background for this component.
@@ -288,7 +288,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="contentBackgroundAlpha", type="Number", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="contentBackgroundAlpha", type="Number", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:contentBackgroundColor
@@ -298,7 +298,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */ 
-	[Style(name="contentBackgroundColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="contentBackgroundColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:downColor
@@ -308,7 +308,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 2.5
 	 *  @productversion Flex 4.5
 	 */
-	[Style(name="downColor", type="uint", format="Color", inherit="yes", theme="mobile")]
+	/*[Style(name="downColor", type="uint", format="Color", inherit="yes", theme="mobile")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:focusColor
@@ -318,7 +318,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */ 
-	[Style(name="focusColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="focusColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:rollOverColor
@@ -330,7 +330,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="rollOverColor", type="uint", format="Color", inherit="yes", theme="spark")]
+	/*[Style(name="rollOverColor", type="uint", format="Color", inherit="yes", theme="spark")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:symbolColor
@@ -340,7 +340,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */ 
-	[Style(name="symbolColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]
+	/*[Style(name="symbolColor", type="uint", format="Color", inherit="yes", theme="spark, mobile")]*/
 
 	/**
 	 *  @copy spark.components.supportClasses.GroupBase#style:touchDelay
@@ -350,7 +350,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 2.5
 	 *  @productversion Flex 4.5
 	 */
-	[Style(name="touchDelay", type="Number", format="Time", inherit="yes", minValue="0.0")]
+	/*[Style(name="touchDelay", type="Number", format="Time", inherit="yes", minValue="0.0")]*/
 
 	/**
 	 *  Color of text shadows.
@@ -362,7 +362,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="textShadowColor", type="uint", format="Color", inherit="yes", theme="mobile")]
+	/*[Style(name="textShadowColor", type="uint", format="Color", inherit="yes", theme="mobile")]*/
 
 	/**
 	 *  Alpha of text shadows.
@@ -374,7 +374,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="textShadowAlpha", type="Number",inherit="yes", minValue="0.0", maxValue="1.0", theme="mobile")]
+	/*[Style(name="textShadowAlpha", type="Number",inherit="yes", minValue="0.0", maxValue="1.0", theme="mobile")]*/
 
 	/**
 	 *  The alpha of the border for this component.
@@ -386,7 +386,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="borderAlpha", type="Number", inherit="no", theme="spark")]
+	/*[Style(name="borderAlpha", type="Number", inherit="no", theme="spark")]*/
 
 	/**
 	 *  The color of the border for this component.
@@ -398,7 +398,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="borderColor", type="uint", format="Color", inherit="no", theme="spark")]
+	/*[Style(name="borderColor", type="uint", format="Color", inherit="no", theme="spark")]*/
 
 	/**
 	 *  Controls the visibility of the border for this component.
@@ -410,7 +410,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="borderVisible", type="Boolean", inherit="no", theme="spark")]
+	/*[Style(name="borderVisible", type="Boolean", inherit="no", theme="spark")]*/
 
 	/**
 	 *  The radius of the corners for this component.
@@ -422,7 +422,7 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="cornerRadius", type="Number", format="Length", inherit="no", theme="spark")]
+	/*[Style(name="cornerRadius", type="Number", format="Length", inherit="no", theme="spark")]*/
 
 	/**
 	 *  Controls the visibility of the drop shadow for this component.
@@ -434,16 +434,16 @@ package com.deCampredon.spark.components
 	 *  @playerversion AIR 1.5
 	 *  @productversion Flex 4
 	 */
-	[Style(name="dropShadowVisible", type="Boolean", inherit="no", theme="spark")]
+	/*[Style(name="dropShadowVisible", type="Boolean", inherit="no", theme="spark")]*/
 
 
-	[ResourceBundle("controls")]
-	[ResourceBundle("SharedResources")]
+	/*[ResourceBundle("controls")]*/
+	/*[ResourceBundle("SharedResources")]*/
 
-	[SkinState("normal")]
-	[SkinState("disabled")]
-	[SkinState("normalWithYearNavigation")]
-	[SkinState("disabledWithYearNavigation")]
+	/*[SkinState("normal")]*/
+	/*[SkinState("disabled")]*/
+	/*[SkinState("normalWithYearNavigation")]*/
+	/*[SkinState("disabledWithYearNavigation")]*/
 
 	/**
 	 *  The DateChooser control displays the name of a month, the year,
@@ -452,7 +452,7 @@ package com.deCampredon.spark.components
 	 *  The user can select a date.
 	 *  @author François de Campredon
 	 */
-	public class DateChooser extends SkinnableComponent implements IFocusManagerComponent
+	export class DateChooser extends SkinnableComponent implements IFocusManagerComponent
 	{
 
 		//--------------------------------------------------------------------------
@@ -464,7 +464,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private static const dayProps:Array = ["sun","mon","tue","wen","thu","fri","sat"];
+		private static dayProps:any[] = ["sun","mon","tue","wen","thu","fri","sat"];
 
 		//--------------------------------------------------------------------------
 		//
@@ -475,7 +475,7 @@ package com.deCampredon.spark.components
 		/**
 		 * Constructor
 		 */
-		public function DateChooser(value:Date = null)
+		public DateChooser(value:Date = null)
 		{
 			super();
 			var currentDate:Date = value ? value : new Date();
@@ -493,46 +493,46 @@ package com.deCampredon.spark.components
 		//
 		//--------------------------------------------------------------------------
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * SkinPart representing a navigation button
 		 */
-		public var nextMonthButton:ButtonBase;
+		public nextMonthButton:ButtonBase;
 
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * SkinPart representing a navigation button
 		 */
-		public var prevMonthButton:ButtonBase;
+		public prevMonthButton:ButtonBase;
 
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * SkinPart displaying the displayedMonth name
 		 */
-		public var monthLabelDisplay:IDisplayText;
+		public monthLabelDisplay:IDisplayText;
 
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * Body of the chooser
 		 */
-		public var bodyGrid:DateChooserDataGrid;
+		public bodyGrid:DateChooserDataGrid;
 
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * Spinner allowing year navigation.
 		 */
-		public var yearNavigator:YearNavigatorSpinner;
+		public yearNavigator:YearNavigatorSpinner;
 
-		[SkinPart(required="false")]
+		/*[SkinPart(required="false")]*/
 		/**
 		 * Skin part that will renderer the "today" indicator,
 		 * that part should not be added as a child of the skin.
 		 */
-		public var todayIndicator:IVisualElement;
+		public todayIndicator:IVisualElement;
 
 
 		//--------------------------------------------------------------------------
@@ -548,30 +548,30 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override public function get baselinePosition():Number {
-			return getBaselinePositionForPart(monthLabelDisplay as IVisualElement);
+		/*override*/ public get baselinePosition():number {
+			return getBaselinePositionForPart(<IVisualElement>monthLabelDisplay );
 		}
 
 		//----------------------------------
 		//  selectedDate 
 		//----------------------------------
 
-		private var _selectedDate:Date;
+		private _selectedDate:Date;
 
-		private var selectedDateChanged:Boolean
+		private selectedDateChanged:boolean
 
-		[Bindable(event="selectionChange")]
+		/*[Bindable(event="selectionChange")]*/
 		/**
 		 *  Date selected in the DateChooser control.
 		 *  If the incoming Date object has any time values, 
 		 *  they are zeroed out.
 		 */
-		public function get selectedDate():Date
+		public get selectedDate():Date
 		{
 			return _selectedDate;
 		}
 
-		public function set selectedDate(value:Date):void
+		public set selectedDate(value:Date)
 		{
 			if( _selectedDate == value || ( value && !isEnableddDate(value) ) )
 				return;
@@ -599,16 +599,16 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the displayedMonth property.
 		 */
-		private var _displayedMonth:int;
+		private _displayedMonth:number;
 
 		/**
 		 *  @private
 		 */
-		private var displayedMonthChanged:Boolean = false;
+		private displayedMonthChanged:boolean = false;
 
 
-		[Bindable("displayedMonthChanged")]
-		[Inspectable(category="General")]
+		/*[Bindable("displayedMonthChanged")]*/
+		/*[Inspectable(category="General")]*/
 
 		/**
 		 *  Used together with the <code>displayedYear</code> property,
@@ -620,7 +620,7 @@ package com.deCampredon.spark.components
 		 *  <p>The default value is the current month.</p>
 		 *
 		 */
-		public function get displayedMonth():int
+		public get displayedMonth():number
 		{
 			return _displayedMonth;
 		}
@@ -628,7 +628,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set displayedMonth(value:int):void
+		public set displayedMonth(value:number)
 		{
 			if (value < 0 || value > 11 || displayedMonth == value)
 				return;
@@ -649,16 +649,16 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the displayedYear property.
 		 */
-		private var _displayedYear:int;
+		private _displayedYear:number;
 
 		/**
 		 *  @private
 		 */
-		private var displayedYearChanged:Boolean = false;
+		private displayedYearChanged:boolean = false;
 
 
-		[Bindable("displayedYearChanged")]
-		[Inspectable(category="General")]
+		/*[Bindable("displayedYearChanged")]*/
+		/*[Inspectable(category="General")]*/
 
 		/**
 		 *  Used together with the <code>displayedMonth</code> property,
@@ -669,7 +669,7 @@ package com.deCampredon.spark.components
 		 *  <p>The default value is the current year.</p>
 		 *  
 		 */
-		public function get displayedYear():int
+		public get displayedYear():number
 		{
 			return _displayedYear;
 		}
@@ -677,7 +677,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set displayedYear(value:int):void
+		public set displayedYear(value:number)
 		{
 			if (displayedYear == value || value < minYear || value > maxYear)
 				return;
@@ -699,20 +699,20 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the firstDayOfWeek property.
 		 */
-		private var _firstDayOfWeek:int;
+		private _firstDayOfWeek:number;
 
 		/**
 		 *  @private
 		 */
-		private var firstDayOfWeekOverride:Number;
+		private firstDayOfWeekOverride:number;
 
 		/**
 		 *  @private
 		 */
-		private var firstDayOfWeekChanged:Boolean = false;
+		private firstDayOfWeekChanged:boolean = false;
 
-		[Bindable("firstDayOfWeekChanged")]
-		[Inspectable(category="General")]
+		/*[Bindable("firstDayOfWeekChanged")]*/
+		/*[Inspectable(category="General")]*/
 
 		/**
 	     *  Number representing the day of the week to display in the
@@ -727,7 +727,7 @@ package com.deCampredon.spark.components
 	     *  @default 0 (Sunday)
 		 *  
 		 */
-		public function get firstDayOfWeek():Number
+		public get firstDayOfWeek():number
 		{
 			return _firstDayOfWeek;
 		}
@@ -735,7 +735,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set firstDayOfWeek(value:Number):void
+		public set firstDayOfWeek(value:number)
 		{
 			if (firstDayOfWeek == value)
 				return;
@@ -761,19 +761,19 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the dayNames property.
 		 */
-		private var _dayNames:Vector.<String>;
+		private _dayNames:string[];
 
 		/**
 		 *  @private
 		 */
-		private var dayNamesChanged:Boolean = false;
+		private dayNamesChanged:boolean = false;
 
 		/**
 		 *  @private
 		 */
-		private var dayNamesOverride:Vector.<String>;
+		private dayNamesOverride:string[];
 
-		[Bindable("dayNamesChanged")]
+		/*[Bindable("dayNamesChanged")]*/
 		/**
 		 *  The weekday names for DateChooser control.
 		 *  Changing this property changes the day labels
@@ -784,7 +784,7 @@ package com.deCampredon.spark.components
 		 *  @default [ "S", "M", "T", "W", "T", "F", "S" ].
 		 *  
 		 */
-		public function get dayNames():Vector.<String>
+		public get dayNames():string[]
 		{
 			return _dayNames?_dayNames.concat():null;
 		}
@@ -792,14 +792,14 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set dayNames(value:Vector.<String>):void
+		public set dayNames(value:string[])
 		{
 			if(value && value.length!=7)
 				return;
 			dayNamesOverride = value;
 
 			_dayNames = value != null ?
-				value : Vector.<String>(resourceManager.getStringArray("controls", "dayNamesShortest"))
+				value : (<string[]>getStringArray("controls", "dayNamesShortest"))
 
 			// _dayNames will be null if there are no resources.
 			_dayNames = _dayNames ? _dayNames.concat() : null;
@@ -820,17 +820,17 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the monthNames property.
 		 */
-		private var _monthNames:Vector.<String>;
+		private _monthNames:string[];
 
-		private var monthNamesOverride:Vector.<String>;
+		private monthNamesOverride:string[];
 
 		/**
 		 *  @private
 		 */
-		private var monthNamesChanged:Boolean = false;
+		private monthNamesChanged:boolean = false;
 
 
-		[Bindable("monthNamesChanged")]
+		/*[Bindable("monthNamesChanged")]*/
 
 		/**
 		 *  Names of the months displayed at the top of the DateChooser control.
@@ -843,7 +843,7 @@ package com.deCampredon.spark.components
 		 *  
 		 *  
 		 */
-		public function get monthNames():Vector.<String>
+		public get monthNames():string[]
 		{
 			return _monthNames?_monthNames.concat():null;
 		}
@@ -851,7 +851,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set monthNames(value:Vector.<String>):void
+		public set monthNames(value:string[])
 		{
 			if(value &&  value.length!=12)
 				return;
@@ -859,7 +859,7 @@ package com.deCampredon.spark.components
 			monthNamesOverride = value;
 
 			_monthNames = value != null ?
-				value : Vector.<String>(resourceManager.getStringArray("SharedResources", "monthNames"));
+				value : (<string[]>getStringArray("SharedResources", "monthNames"));
 
 			// _monthNames will be null if there are no resources.
 			_monthNames = _monthNames ? _monthNames.concat() : null;
@@ -879,17 +879,17 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the monthSymbol property.
 		 */
-		private var _monthSymbol:String;
+		private _monthSymbol:string;
 
-		private var monthSymbolOverride:String;
+		private monthSymbolOverride:string;
 
 		/**
 		 *  @private
 		 */
-		private var monthSymbolChanged:Boolean = false;
+		private monthSymbolChanged:boolean = false;
 
-		[Bindable("monthSymbolChanged")]
-		[Inspectable(defaultValue="")]
+		/*[Bindable("monthSymbolChanged")]*/
+		/*[Inspectable(defaultValue="")]*/
 
 		/**
 		 *  This property is appended to the end of the value specified 
@@ -901,7 +901,7 @@ package com.deCampredon.spark.components
 		 *  @default ""
 		 *  
 		 */
-		public function get monthSymbol():String
+		public get monthSymbol():string
 		{
 			return _monthSymbol;
 		}
@@ -909,7 +909,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set monthSymbol(value:String):void
+		public set monthSymbol(value:string)
 		{
 			monthSymbolOverride = value;
 
@@ -932,15 +932,15 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the yearSymbol property.
 		 */
-		private var _yearSymbol:String;
+		private _yearSymbol:string;
 
 		/**
 		 *  @private
 		 */
-		private var yearSymbolOverride:String;
+		private yearSymbolOverride:string;
 
-		[Bindable("yearSymbolChanged")]
-		[Inspectable(defaultValue="")]
+		/*[Bindable("yearSymbolChanged")]*/
+		/*[Inspectable(defaultValue="")]*/
 
 		/**
 		 *  This property is appended to the end of the year 
@@ -955,7 +955,7 @@ package com.deCampredon.spark.components
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		public function get yearSymbol():String
+		public get yearSymbol():string
 		{
 			return _yearSymbol;
 		}
@@ -963,7 +963,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set yearSymbol(value:String):void
+		public set yearSymbol(value:string)
 		{
 			yearSymbolOverride = value;
 
@@ -985,10 +985,10 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the yearNavigationEnabled property.
 		 */
-		private var _yearNavigationEnabled:Boolean = false;
+		private _yearNavigationEnabled:boolean = false;
 
-		[Bindable("yearNavigationEnabledChanged")]
-		[Inspectable(defaultValue="false")]
+		/*[Bindable("yearNavigationEnabledChanged")]*/
+		/*[Inspectable(defaultValue="false")]*/
 
 		/**
 		 *  Enables year navigation. When <code>true</code>
@@ -1001,7 +1001,7 @@ package com.deCampredon.spark.components
 		 *  @default false
 		 *  
 		 */
-		public function get yearNavigationEnabled():Boolean
+		public get yearNavigationEnabled():boolean
 		{
 			return _yearNavigationEnabled;
 		}
@@ -1009,7 +1009,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set yearNavigationEnabled(value:Boolean):void
+		public set yearNavigationEnabled(value:boolean)
 		{
 			if(_yearNavigationEnabled != value) {
 				_yearNavigationEnabled = value;
@@ -1026,15 +1026,15 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the maxYear property.
 		 */
-		private var _maxYear:int = 2100;
+		private _maxYear:number = 2100;
 
 		/**
 		 * @private
 		 */
-		private var maxYearChanged:Boolean;
+		private maxYearChanged:boolean;
 
-		[Bindable("maxYearChanged")]
-		[Inspectable(defaultValue="2100")]
+		/*[Bindable("maxYearChanged")]*/
+		/*[Inspectable(defaultValue="2100")]*/
 		/**
 		 *  The last year selectable in the control.
 		 *
@@ -1045,7 +1045,7 @@ package com.deCampredon.spark.components
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		public function get maxYear():int
+		public get maxYear():number
 		{
 			return _maxYear;
 		}
@@ -1053,7 +1053,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set maxYear(value:int):void
+		public set maxYear(value:number)
 		{
 			if (_maxYear == value || value < _minYear)
 				return;
@@ -1071,15 +1071,15 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the minYear property.
 		 */
-		private var _minYear:int = 1900;
+		private _minYear:number = 1900;
 
 		/**
 		 * @private
 		 */
-		private var minYearChanged:Boolean;
+		private minYearChanged:boolean;
 
-		[Bindable("minYearChanged")]
-		[Inspectable(defaultValue="1900")]
+		/*[Bindable("minYearChanged")]*/
+		/*[Inspectable(defaultValue="1900")]*/
 		/**
 		 *  The first year selectable in the control.
 		 *
@@ -1090,7 +1090,7 @@ package com.deCampredon.spark.components
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		public function get minYear():int
+		public get minYear():number
 		{
 			return _minYear;
 		}
@@ -1098,7 +1098,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set minYear(value:int):void
+		public set minYear(value:number)
 		{
 			if (_minYear == value || _maxYear<value)
 				return;
@@ -1116,15 +1116,15 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the showToday property.
 		 */
-		private var _showToday:Boolean = true;
+		private _showToday:boolean = true;
 
 		/**
 		 *  @private
 		 */
-		private var showTodayChanged:Boolean = false;
+		private showTodayChanged:boolean = false;
 
-		[Bindable("showTodayChanged")]
-		[Inspectable(category="General", defaultValue="true")]
+		/*[Bindable("showTodayChanged")]*/
+		/*[Inspectable(category="General", defaultValue="true")]*/
 
 		/**
 		 *  If <code>true</code>, specifies that today is highlighted
@@ -1134,7 +1134,7 @@ package com.deCampredon.spark.components
 		 *  @default true
 		 *  
 		 */
-		public function get showToday():Boolean
+		public get showToday():boolean
 		{
 			return _showToday;
 		}
@@ -1142,7 +1142,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set showToday(value:Boolean):void
+		public set showToday(value:boolean)
 		{
 			if(showToday == value)
 				return;
@@ -1161,14 +1161,14 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the disabledDays property.
 		 */
-		private var _disabledDays:Vector.<int>;
+		private _disabledDays:number[];
 
 		/**
 		 *  @private
 		 */
-		private var disabledDaysChanged:Boolean = false;
+		private disabledDaysChanged:boolean = false;
 
-		[Bindable("disabledDaysChanged")]
+		/*[Bindable("disabledDaysChanged")]*/
 		/**
 		 *  The days to disable in a week.
 		 *  All the dates in a month, for the specified day, are disabled.
@@ -1185,7 +1185,7 @@ package com.deCampredon.spark.components
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		public function get disabledDays():Vector.<int>
+		public get disabledDays():number[]
 		{
 			return _disabledDays?_disabledDays.concat():null;
 		}
@@ -1193,7 +1193,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set disabledDays(value:Vector.<int>):void
+		public set disabledDays(value:number[])
 		{
 			_disabledDays = value?value.concat():null;
 			disabledDaysChanged = true;
@@ -1209,15 +1209,15 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the disabledRanges property.
 		 */
-		private var _disabledRanges:Array = [];
+		private _disabledRanges:any[] = [];
 
 		/**
 		 *  @private
 		 */
-		private var disabledRangesChanged:Boolean = false;
+		private disabledRangesChanged:boolean = false;
 
-		[Bindable("disabledRangesChanged")]
-		[Inspectable(arrayType="Object")]
+		/*[Bindable("disabledRangesChanged")]*/
+		/*[Inspectable(arrayType="Object")]*/
 
 		/**
 		 *  Disables single and multiple days.
@@ -1252,7 +1252,7 @@ package com.deCampredon.spark.components
 		 *  @default []
 		 *  
 		 */
-		public function get disabledRanges():Array
+		public get disabledRanges():any[]
 		{
 			return _disabledRanges;
 		}
@@ -1260,7 +1260,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set disabledRanges(value:Array):void
+		public set disabledRanges(value:any[])
 		{
 			_disabledRanges = scrubTimeValues(value);
 			disabledRangesChanged = true;
@@ -1277,14 +1277,14 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  Storage for the selectableRange property.
 		 */
-		private var _selectableRange:Object;
+		private _selectableRange:Object;
 
 		/**
 		 *  @private
 		 */
-		private var selectableRangeChanged:Boolean = false;
+		private selectableRangeChanged:boolean = false;
 
-		[Bindable("selectableRangeChanged")]
+		/*[Bindable("selectableRangeChanged")]*/
 
 		/**
 		 *  Range of dates between which dates are selectable.
@@ -1316,7 +1316,7 @@ package com.deCampredon.spark.components
 		 *  @playerversion AIR 1.1
 		 *  @productversion Flex 3
 		 */
-		public function get selectableRange():Object
+		public get selectableRange():Object
 		{
 			return _selectableRange;
 		}
@@ -1324,7 +1324,7 @@ package com.deCampredon.spark.components
 		/**
 		 *  @private
 		 */
-		public function set selectableRange(value:Object):void
+		public set selectableRange(value:Object)
 		{
 			_selectableRange = scrubTimeValue(value);
 			selectableRangeChanged = true;
@@ -1347,13 +1347,13 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private var _gridColumns:IList;
+		private _gridColumns:IList;
 
 		/**
 		 * @private
 		 * list of columns passed to the bodyGrid
 		 */
-		private function get gridColumns():IList
+		private get gridColumns():IList
 		{
 			return _gridColumns;
 		}
@@ -1361,7 +1361,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private function set gridColumns(value:IList):void
+		private set gridColumns(value:IList)
 		{
 			_gridColumns = value;
 			if(bodyGrid)
@@ -1375,13 +1375,13 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private var _gridDataProvider:IList;
+		private _gridDataProvider:IList;
 
 		/**
 		 * @private
 		 * dataProvider passed to the bodyGrid
 		 */
-		private function get gridDataProvider():IList
+		private get gridDataProvider():IList
 		{
 			return _gridDataProvider;
 		}
@@ -1389,7 +1389,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private function set gridDataProvider(value:IList):void
+		private set gridDataProvider(value:IList)
 		{
 			_gridDataProvider = value;
 			if(bodyGrid)
@@ -1402,13 +1402,13 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private var _currentMonthText:String;
+		private _currentMonthText:string;
 
 		/**
 		 * @private
 		 * text displayed by the monthLabelDisplay
 		 */
-		private function get currentMonthText():String
+		private get currentMonthText():string
 		{
 			return _currentMonthText;
 		}
@@ -1416,7 +1416,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private function set currentMonthText(value:String):void
+		private set currentMonthText(value:string)
 		{
 			_currentMonthText = value;
 			if(monthLabelDisplay)
@@ -1429,12 +1429,12 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private var _selectedCellPosition:CellPosition;
+		private _selectedCellPosition:CellPosition;
 
 		/**
 		 * cell selected on the grid
 		 */
-		private function get selectedCellPosition():CellPosition
+		private get selectedCellPosition():CellPosition
 		{
 			return _selectedCellPosition;
 		}
@@ -1442,7 +1442,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private function set selectedCellPosition(value:CellPosition):void
+		private set selectedCellPosition(value:CellPosition)
 		{
 			_selectedCellPosition = value;
 			if(bodyGrid)
@@ -1461,12 +1461,12 @@ package com.deCampredon.spark.components
 		 * @private
 		 * retrieve the CellPosition of the cell displaying the current date
 		 */
-		public function getTodayCellPosition():CellPosition {
+		public getTodayCellPosition():CellPosition {
 			var today:Date = new Date();
 			if(displayedMonth == today.month && displayedYear == today.fullYear) {
 				var cellPosition:CellPosition = new CellPosition();
 				var date:Date = new Date(displayedYear,displayedMonth,1);
-				var currentWeek:int = -1.
+				var currentWeek:number = -1.
 				while(date.month == displayedMonth) {
 					if(date.day == firstDayOfWeek || currentWeek==-1) {
 						currentWeek++;
@@ -1485,7 +1485,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		public function isEnabledCell(rowIndex:int, columnIndex:int):Boolean
+		public isEnabledCell(rowIndex:number, columnIndex:number):boolean
 		{
 			var date:Date = getDateForCell(rowIndex,columnIndex);
 			return isEnableddDate(date);
@@ -1495,9 +1495,9 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override protected function commitProperties():void {
+		/*override*/ /*protected*/ commitProperties():void {
 			super.commitProperties();
-			var i:int,weekObject:Object;
+			var i:number,weekObject:Object;
 
 			if(maxYearChanged || minYearChanged) {
 				if(displayedYear < minYear)
@@ -1556,7 +1556,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override protected function resourcesChanged():void
+		/*override*/ /*protected*/ resourcesChanged():void
 		{
 			super.resourcesChanged();
 
@@ -1571,7 +1571,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override protected function getCurrentSkinState():String {
+		/*override*/ /*protected*/ getCurrentSkinState():string {
 			if(yearNavigationEnabled) {
 				return enabled?"normalWithYearNavigation":"disabledWithYearNavigation";
 			}
@@ -1581,7 +1581,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override protected function partAdded(partName:String, instance:Object):void {
+		/*override*/ /*protected*/ partAdded(partName:string, instance:Object):void {
 			super.partAdded(partName,instance);
 			if(instance == bodyGrid) {
 				bodyGrid.dateChooser = this;
@@ -1616,7 +1616,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		override protected function partRemoved(partName:String, instance:Object):void {
+		/*override*/ /*protected*/ partRemoved(partName:string, instance:Object):void {
 			super.partRemoved(partName,instance);
 			if(instance == bodyGrid) {
 				bodyGrid.removeEventListener(GridSelectionEvent.SELECTION_CHANGING,bodyGrid_selectionChangingHandler);
@@ -1648,7 +1648,7 @@ package com.deCampredon.spark.components
 		 * handle selectionChanging events displayed by the grid, prevent the selection 
 		 * if the cell corresponding date should not be selected.
 		 */
-		protected function bodyGrid_selectionChangingHandler(event:GridSelectionEvent):void
+		/*protected*/ bodyGrid_selectionChangingHandler(event:GridSelectionEvent):void
 		{
 			if(!isEnabledCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex)){
 				event.preventDefault();
@@ -1659,7 +1659,7 @@ package com.deCampredon.spark.components
 		 * @private
 		 * handle selectionChange events dispatched by the grid, and commit the selection
 		 */
-		protected function bodyGrid_selectionChangeHandler(event:GridSelectionEvent):void
+		/*protected*/ bodyGrid_selectionChangeHandler(event:GridSelectionEvent):void
 		{
 			var date:Date = getDateForCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex);
 			date = new Date(date.time);
@@ -1673,7 +1673,7 @@ package com.deCampredon.spark.components
 		 * handle rollOver events on grid cell, prevent the rollOverIndicator to be displayed
 		 * if the cell is not selectable.
 		 */
-		protected function bodyGrid_gridRollOverHandler(event:GridEvent):void
+		/*protected*/ bodyGrid_gridRollOverHandler(event:GridEvent):void
 		{
 			if(!isEnabledCell(event.rowIndex,event.columnIndex) && bodyGrid && bodyGrid.grid) {
 				bodyGrid.grid.hoverRowIndex = -1;
@@ -1685,7 +1685,7 @@ package com.deCampredon.spark.components
 		 * @private
 		 * handle prevMonthButton click events
 		 */
-		protected function prevMonthButton_clickHandler(event:MouseEvent):void
+		/*protected*/ prevMonthButton_clickHandler(event:MouseEvent):void
 		{
 			decreaseDisplayedMonth();
 		}
@@ -1695,7 +1695,7 @@ package com.deCampredon.spark.components
 		 * @private
 		 * handle nextMonthButton click events
 		 */
-		protected function nextMonthButton_clickHandler(event:MouseEvent):void
+		/*protected*/ nextMonthButton_clickHandler(event:MouseEvent):void
 		{
 			increaseDisplayedMonth();
 		}		
@@ -1705,9 +1705,9 @@ package com.deCampredon.spark.components
 		 * @private
 		 * handle yearNavigation change events
 		 */
-		protected function yearNavigator_changeHandler(event:Event):void
+		/*protected*/ yearNavigator_changeHandler(event:Event):void
 		{
-			var increased:Boolean = displayedYear < yearNavigator.value;
+			var increased:boolean = displayedYear < yearNavigator.value;
 			displayedYear = yearNavigator.value;
 			dispatchScrollingEvent(increased?DateChooserEventDetail.NEXT_YEAR:DateChooserEventDetail.PREVIOUS_YEAR);
 		}	
@@ -1722,7 +1722,7 @@ package com.deCampredon.spark.components
 		 * @private 
 		 * update the selectedDate
 		 */
-		private function setSelectedDate(date:Date):void
+		private setSelectedDate(date:Date):void
 		{
 			//dispatch a selectionChanging event to allow the user to prevent/modify the selection
 			var selectionEvent:DateChooserSelectionEvent = 
@@ -1744,7 +1744,7 @@ package com.deCampredon.spark.components
 		 * @private
 		 * increase the displayed month
 		 */
-		private function increaseDisplayedMonth():void
+		private increaseDisplayedMonth():void
 		{
 			if(displayedMonth == 11) {
 				if(displayedYear >= maxYear)
@@ -1762,7 +1762,7 @@ package com.deCampredon.spark.components
 		 * @private
 		 * decrease the displayed month
 		 */
-		private function decreaseDisplayedMonth():void
+		private decreaseDisplayedMonth():void
 		{
 			if(displayedMonth ==0) {
 				if(displayedYear <= minYear)
@@ -1777,7 +1777,7 @@ package com.deCampredon.spark.components
 		}
 
 
-		private function dispatchScrollingEvent(detail:String):void
+		private dispatchScrollingEvent(detail:string):void
 		{
 			dispatchEvent(new DateChooserScrollEvent(DateChooserScrollEvent.SCROLL,false,false,detail));
 		}
@@ -1786,12 +1786,12 @@ package com.deCampredon.spark.components
 		 * @private
 		 * create column passed to the bodyGrid skinPart
 		 */
-		private function updateGridColumn():void
+		private updateGridColumn():void
 		{
-			var days:Vector.<int> = new Vector.<int>();
-			var gridColumnsArray:Array = []
+			var days:number[] = new Array<number>();
+			var gridColumnsArray:any[] = []
 			for(var i:int =0;i<7;i++) {
-				var day:int = (i+firstDayOfWeek)%7;
+				var day:number = (i+firstDayOfWeek)%7;
 				var collumn:GridColumn = new GridColumn();
 				collumn.dataField = dayProps[day];
 				collumn.headerText = dayNames[day];
@@ -1805,16 +1805,16 @@ package com.deCampredon.spark.components
 		 * @private
 		 * create the dataProvider passed to the bodyGrid skinPart
 		 */
-		private function updateGridDataProvider():void
+		private updateGridDataProvider():void
 		{
 			var date:Date = new Date(displayedYear,displayedMonth,1);
-			var weekObjects:Array = new Array(6);
+			var weekObjects:any[] = new Array(6);
 			var currentObject:Object;
 			for (var i:int = 0; i < weekObjects.length; i++) 
 			{
 				weekObjects[i] = currentObject = new Object();
 			}
-			var currentWeek:int = -1;
+			var currentWeek:number = -1;
 
 			while(date.month == displayedMonth) {
 				if(date.day == firstDayOfWeek || currentWeek==-1) {
@@ -1831,7 +1831,7 @@ package com.deCampredon.spark.components
 		 * @private 
 		 * update the text displayed by the monthLabelDisplay
 		 */
-		private function updateMonthText():void
+		private updateMonthText():void
 		{
 			currentMonthText = monthNames[displayedMonth]+monthSymbol;
 		}
@@ -1844,7 +1844,7 @@ package com.deCampredon.spark.components
 		 * 		if true, will set the displayedMonth/displayedYear properties 
 		 * 		to be sure that the selectedDate is currently displayed
 		 */
-		private function commitVisualSelection(overrideMonthAndYear:Boolean):void
+		private commitVisualSelection(overrideMonthAndYear:boolean):void
 		{
 			if(selectedDate ) {
 				if(displayedMonth != selectedDate.month || displayedYear != selectedDate.fullYear) {
@@ -1858,7 +1858,7 @@ package com.deCampredon.spark.components
 					}
 				}
 				var date:Date = new Date(displayedYear,displayedMonth,1);
-				var currentWeek:int = -1.
+				var currentWeek:number = -1.
 				while(date.month == displayedMonth) {
 					if(date.day == firstDayOfWeek || currentWeek==-1) {
 						currentWeek++;
@@ -1882,9 +1882,9 @@ package com.deCampredon.spark.components
 		 * @private
 		 * label function used by gridColumns of the bodyGrud
 		 */
-		private function gridLabelFunction(weekObject:Object,column:GridColumn):String {
+		private gridLabelFunction(weekObject:Object,column:GridColumn):string {
 			if(weekObject) {
-				var date:Date = weekObject[column.dataField] as Date;
+				var date:Date = <Date>weekObject[column.dataField] ;
 				if(date)
 					return String(date.date);
 			}
@@ -1898,20 +1898,20 @@ package com.deCampredon.spark.components
 		 * @private
 		 * return true if the the given date is contained by the current range
 		 */
-		private function dateInRange(date:Date, range:Object):Boolean
+		private dateInRange(date:Date, range:Object):boolean
 		{
-			var hasRangeStart:Boolean = (
+			var hasRangeStart:boolean = (
 				range.hasOwnProperty("rangeStart") && 
-				range.rangeStart is Date
+				range.rangeStart instanceof Date
 			)
 
-			var hasRangeEnd:Boolean = (
+			var hasRangeEnd:boolean = (
 				range.hasOwnProperty("rangeEnd") && 
-				range.rangeEnd is Date
+				range.rangeEnd instanceof Date
 			)
 
-			var afterRangeStart:Boolean = hasRangeStart && range.rangeStart.time <= date.time;
-			var beforeRangeEnd:Boolean = hasRangeEnd && range.rangeEnd.time >= date.time ;
+			var afterRangeStart:boolean = hasRangeStart && range.rangeStart.time <= date.time;
+			var beforeRangeEnd:boolean = hasRangeEnd && range.rangeEnd.time >= date.time ;
 			if(hasRangeStart && hasRangeEnd) {
 				if(afterRangeStart && beforeRangeEnd) return true;
 			}
@@ -1928,10 +1928,10 @@ package com.deCampredon.spark.components
 		 * @private
 		 * get the date corresponding to a grid cell rowIndex and columnIndex
 		 */
-		private function getDateForCell(rowIndex:uint,columnIndex:uint):Date {
+		private getDateForCell(rowIndex:number,columnIndex:number):Date {
 			if(gridDataProvider && gridColumns && rowIndex >=0 && rowIndex <7 && columnIndex >=0 && columnIndex < 7) {
 				var week:Object = gridDataProvider.getItemAt(rowIndex);
-				var column:GridColumn = gridColumns.getItemAt(columnIndex) as GridColumn;
+				var column:GridColumn = <GridColumn>gridColumns.getItemAt(columnIndex) ;
 				return week[column.dataField];
 			}
 			return null;
@@ -1943,28 +1943,28 @@ package com.deCampredon.spark.components
 		 * return true if the date is currently selectable in compiliance with 
 		 * the disabledDays, disabledRanges and selectableRange properties
 		 */
-		private function isEnableddDate(date:Date):Boolean {
+		private isEnableddDate(date:Date):boolean {
 			if(!date)
 				return false;
 			if(disabledDays && disabledDays.indexOf(date.day)!=-1)
 				return false;
 			if(disabledRanges) {
-				for each(var range:* in disabledRanges) {
+				/*for each(var range:* in disabledRanges) {
 					if(range is Date && date.time == range.time) {
 						return false;
 					}
 					else if(range is Object && dateInRange(date,range)) {
 						return false;
 					}
-				}
-                for each(range in disabledRanges) {
+				}*/
+                /*for each(range in disabledRanges) {
 					if(range is Date && date.time == range.time) {
 						return false;
 					}
 					else if(range is Object && dateInRange(date,range)) {
 						return false;
 					}
-				}
+				}*/
 			}
 			if(selectableRange && !dateInRange(date,selectableRange)) {
 				return false;
@@ -1975,7 +1975,7 @@ package com.deCampredon.spark.components
 		/**
 		 * @private
 		 */
-		private function dispatchChangeEvent(event:String):void
+		private dispatchChangeEvent(event:string):void
 		{
 			if(hasEventListener(event))
 				dispatchEvent(new Event(event));
@@ -1985,13 +1985,13 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  This method scrubs out time values from incoming date objects
 		 */ 
-		private function scrubTimeValue(value:Object):Object
+		private scrubTimeValue(value:Object):Object
 		{
-			if (value is Date)
+			if (value instanceof Date)
 			{
 				return new Date(value.getFullYear(), value.getMonth(), value.getDate());
 			}
-			else if (value is Object) 
+			else if (value instanceof Object) 
 			{
 				var range:Object = {};
 				if (value.rangeStart)
@@ -2016,9 +2016,9 @@ package com.deCampredon.spark.components
 		 *  @private
 		 *  This method scrubs out time values from incoming date objects
 		 */ 
-		private function scrubTimeValues(values:Array):Array
+		private scrubTimeValues(values:any[]):any[]
 		{
-			var dates:Array = [];
+			var dates:any[] = [];
 			for (var i:int = 0; i < values.length; i++)
 			{
 				dates[i] = scrubTimeValue(values[i]);
