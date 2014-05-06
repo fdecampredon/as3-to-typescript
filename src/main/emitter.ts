@@ -41,6 +41,9 @@ class Emitter {
     private ast: Node;
     
     //state
+    
+    private currentClassName: string;
+    
     private isNew: boolean;
     
     constructor(
@@ -202,6 +205,8 @@ class Emitter {
     
     private emitClass(node: Node) {
         this.emitDeclaration(node);
+        var name = node.findChild(NodeKind.NAME);
+        this.currentClassName = name.text;
         var content = node.findChild(NodeKind.CONTENT)
         var contentsNode = content && content.children;
         if (contentsNode) {
@@ -227,6 +232,7 @@ class Emitter {
                 }
             })
         }
+        this.currentClassName = null;
     }
     
     
@@ -245,10 +251,19 @@ class Emitter {
     }
     
     private emitMethod(node: Node) {
-        this.emitClassField(node);
         var name = node.findChild(NodeKind.NAME);
-        this.consume('function', name.start);
-        this.catchup(name.end)
+        if (node.kind !== NodeKind.FUNCTION || name.text !== this.currentClassName) {
+            this.emitClassField(node);
+            this.consume('function', name.start);
+            this.catchup(name.end)
+        } else {
+            var mods = node.findChild(NodeKind.MOD_LIST);
+            if (mods) {
+                this.catchup(mods.start);
+            }
+            this.insert('constructor');
+            this.skipTo(name.end)
+        }
         this.visitNodes(node.getChildFrom(NodeKind.NAME));
     }
     

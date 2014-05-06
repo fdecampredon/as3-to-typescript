@@ -475,7 +475,7 @@ module com.deCampredon.spark.components
 		/**
 		 * Constructor
 		 */
-		public DateChooser(value:Date = null)
+		constructor(value:Date = null)
 		{
 			super();
 			var currentDate:Date = value ? value : new Date();
