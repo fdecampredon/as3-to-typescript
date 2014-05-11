@@ -44,6 +44,11 @@ class Emitter {
     
     private currentClassName: string;
     
+    private currenClassMembers: {
+        isStatic: boolean;
+        name: string;
+    }[];
+    
     private isNew: boolean;
     
     constructor(
@@ -210,6 +215,33 @@ class Emitter {
         var content = node.findChild(NodeKind.CONTENT)
         var contentsNode = content && content.children;
         if (contentsNode) {
+            this.currenClassMembers = [];
+            contentsNode.forEach(node => {
+                var name: Node;
+                switch (node.kind) {
+                    case NodeKind.SET:
+                    case NodeKind.GET:
+                    case NodeKind.FUNCTION:
+                        name = node.findChild(NodeKind.NAME)
+                        break;
+                    case NodeKind.VAR_LIST:
+                        name = node.findChild(NodeKind.VAR_LIST).findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                        break;
+                    case NodeKind.CONST_LIST:
+                        name = node.findChild(NodeKind.CONST_LIST).findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                        break;
+                }
+                
+                var modList = node.findChild(NodeKind.MOD_LIST);
+                var isStatic = modList && 
+                    modList.children.some(mod => mod.text === 'static');
+               
+                this.currenClassMembers.push({
+                    isStatic: isStatic,
+                    name : name.text
+                });
+            });
+            
             contentsNode.forEach(node => {
                 this.visitNode(node.findChild(NodeKind.META_LIST));
                 this.catchup(node.start);
