@@ -41,7 +41,7 @@ interface Scope {
 }
 
 interface Declaration { 
-    bound: string; 
+    bound?: string; 
     name: string; 
 }
 
@@ -212,7 +212,9 @@ class Emitter {
     
     private emitFunction(node: Node) {
         this.emitDeclaration(node);
+        this.enterFunctionScope(node);
         var rest = node.getChildFrom(NodeKind.MOD_LIST);
+        this.exitScope();
         this.visitNodes(rest);
     }
     
@@ -224,39 +226,7 @@ class Emitter {
         var contentsNode = content && content.children;
         if (contentsNode) {
             //collects declarations
-            var found: {[name: string]: boolean };
-            
-            var declarations = contentsNode.map(node => {
-                var nameNode: Node;
-                var isStatic: boolean;
-                
-                switch (node.kind) {
-                    case NodeKind.SET:
-                    case NodeKind.GET:
-                    case NodeKind.FUNCTION:
-                        nameNode = node.findChild(NodeKind.NAME);
-                        break;
-                    case NodeKind.VAR_LIST:
-                    case NodeKind.CONST_LIST:
-                        nameNode = node.findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
-                        break;
-                }
-                if (!nameNode || found[nameNode.text]) {
-                    return null;
-                }
-                found[nameNode.text] = true;
-                
-                var modList = node.findChild(NodeKind.MOD_LIST);
-                var isStatic = modList && 
-                    modList.children.some(mod => mod.text === 'static');
-                return {
-                    name: nameNode.text,
-                    bound: isStatic ? this.currentClassName : 'this'
-                };
-            }).filter(el => !!el);
-            
-            this.enterScope(declarations);
-            
+            this.enterClassScope(contentsNode);
             contentsNode.forEach(node => {
                 this.visitNode(node.findChild(NodeKind.META_LIST));
                 this.catchup(node.start);
@@ -277,7 +247,8 @@ class Emitter {
                     default:
                         this.visitNode(node);
                 }
-            })
+            });
+            this.exitScope();
         }
         this.currentClassName = null;
     }
@@ -311,6 +282,7 @@ class Emitter {
             this.insert('constructor');
             this.skipTo(name.end)
         }
+        this.enterFunctionScope(node);
         this.visitNodes(node.getChildFrom(NodeKind.NAME));
     }
     
@@ -494,11 +466,74 @@ class Emitter {
         this.catchup(node.end);*/
     }
     
+    
+    private enterClassScope(contentsNode: Node[]) {
+        var found: {[name: string]: boolean };
+            
+        var declarations = contentsNode.map(node => {
+            var nameNode: Node;
+            var isStatic: boolean;
+
+            switch (node.kind) {
+                case NodeKind.SET:
+                case NodeKind.GET:
+                case NodeKind.FUNCTION:
+                    nameNode = node.findChild(NodeKind.NAME);
+                    break;
+                case NodeKind.VAR_LIST:
+                case NodeKind.CONST_LIST:
+                    nameNode = node.findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                    break;
+            }
+            if (!nameNode || found[nameNode.text]) {
+                return null;
+            }
+            found[nameNode.text] = true;
+
+            var modList = node.findChild(NodeKind.MOD_LIST);
+            var isStatic = modList && 
+                modList.children.some(mod => mod.text === 'static');
+            return {
+                name: nameNode.text,
+                bound: isStatic ? this.currentClassName : 'this'
+            };
+        }).filter(el => !!el);
+
+        this.enterScope(declarations);
+    }
+    
+    private enterFunctionScope(node: Node) {
+        var block = node.findChild(NodeKind.BLOCK);
+        if (!block) {
+            this.enterScope([]);
+            return;
+        }
+        function traverse(node: Node): Declaration[] {
+            var result = new Array<Declaration>();
+            if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST) {
+                result = result.concat(
+                    node
+                        .findChildren(NodeKind.NAME_TYPE_INIT)
+                        .map(node => ({ name: node.findChild(NodeKind.NAME).text }))
+                );
+            } 
+            if (node.kind !== NodeKind.FUNCTION && node.children && node.children.length) {
+                result = Array.prototype.concat.apply(result, node.children.map(traverse));
+            }
+            return result.filter(decl => !!decl);
+        }
+        this.enterScope(traverse(block));
+    }
+    
     private enterScope(decls: Declaration[]) {
         this.scope = {
             parent: this.scope,
             declarations: decls
         };
+    }
+    
+    private exitScope() {
+        this.scope = this.scope && this.scope.parent;
     }
     
     private commentNode(node: Node, catchSemi:boolean) {
