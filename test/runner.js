@@ -3,7 +3,7 @@
 var fs = require('fs'),
     path = require('path'),
     AS3Parser = require('../lib/parser'),
-    Emitter = require('../lib/emitter');
+    emitter = require('../lib/emitter');
 
 
 var FIXTURES_DIR = path.join(__dirname,  'fixtures'),
@@ -58,10 +58,9 @@ function compile(callback) {
             var parser = new AS3Parser();
             var content = fs.readFileSync(path.join(FIXTURES_DIR, file), 'UTF-8');
             var ast = parser.buildAst(file, content);
-            var emitter = new Emitter(ast, content);
             results.push({
                 file: path.basename(file, '.as'),
-                content: emitter.emit()
+                content: emitter.emit(ast, content)
             });
         });
     } catch(e) {

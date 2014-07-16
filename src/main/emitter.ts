@@ -5,7 +5,7 @@ import Operators = require('./operators');
 import KeyWords = require('./keywords');
 import Node = require('./node');
 
-
+//Utils
 function assign(target: any, ...items: any[]): any {
     return items.reduce(function (target: any, source: any) {
         return Object.keys(source).reduce((target: any, key: string) => {
@@ -21,7 +21,7 @@ var defaultEmitterOptions = {
     lineSeparator: '\n'
 }
 
-function filterAST(node:Node): void {
+function filterAST(node:Node): Node {
     //we don't care about comment
     node.children = node.children.filter(
         child  => child && 
@@ -32,12 +32,14 @@ function filterAST(node:Node): void {
     node.children.forEach(child => {
         filterAST(child);
     });
+    return node;
 }
 
 
 interface Scope {
     parent: Scope;
-    declarations: Declaration[]
+    declarations: Declaration[];
+    isTopLevel: boolean;
 }
 
 interface Declaration { 
@@ -45,552 +47,567 @@ interface Declaration {
     name: string; 
 }
 
-class Emitter {
-    private index: number = 0;
-    private output: string = '';
-    private options: Emitter.EmitterOptions;
-    private ast: Node;
+var data: {
+    ast : Node;
+    source: string;
+    options: EmitterOptions;
+}
+
+var state: {
+    index: number;
+    currentClassName: string;
+    scope: Scope;
+    isNew: boolean;
+};
+
+var output: string;
+
+
     
-    //state
     
-    private currentClassName: string;
+export function emit(ast: Node, source: string, options?: EmitterOptions) {
+    data = {
+        ast: filterAST(ast),
+        source: source,
+        options: assign(defaultEmitterOptions, options || {})
+    };
+    Object.freeze(data);
     
-    private scope: Scope;
     
-    private isNew: boolean;
-    
-    constructor(
-        ast: Node,
-        private content: string,
-        options?: Emitter.EmitterOptions
-    ) {
-        this.options = assign(defaultEmitterOptions, options || {});
-        this.ast = ast;
-        filterAST(this.ast);
+    state = {
+        index: 0,
+        currentClassName: '',
+        scope: null,
+        isNew: false
     }
+    output = '';
     
     
-    public emit() {
-        this.visitNode(this.ast);
-        this.catchup(this.content.length -1);
-        return this.output;
+    
+    enterScope([]);
+    visitNode(ast);
+    catchup(data.source.length -1);
+    exitScope();
+    return output;
+}
+
+function visitNodes(nodes: Node[]) {
+    if (!nodes) {
+        return;
     }
-    
-    private visitNodes(nodes: Node[]) {
-        if (!nodes) {
-            return;
-        }
-        nodes.forEach(node =>  this.visitNode(node));
+    nodes.forEach(node =>  visitNode(node));
+}
+
+function visitNode(node: Node) {
+    if (!node) {
+        return;
     }
-    
-    private visitNode(node: Node) {
-        if (!node) {
-            return;
-        }
-        switch(node.kind) {
-            case NodeKind.PACKAGE:
-                this.emitPackage(node);
-                break;
-            case NodeKind.META:
-                this.emitMeta(node);
-                break;
-            case NodeKind.IMPORT:
-                this.emitImport(node);
-                break;
-            case NodeKind.USE:
-            case NodeKind.INCLUDE:
-                this.emitInclude(node);
-                break;
-            case NodeKind.FUNCTION:
-                this.emitFunction(node);
-                break;
-            case NodeKind.INTERFACE:
-                this.emitInterface(node);
-                break;
-            case NodeKind.CLASS:
-                this.emitClass(node);
-                break;
-            case NodeKind.VECTOR:
-                this.emitVector(node);
-                break;
-            case NodeKind.TYPE:
-                this.emitType(node);
-                break;
-            case NodeKind.CALL:
-                this.emitCall(node);
-                break;
-            case NodeKind.NEW:
-                this.emitNew(node);
-                break;
-            case NodeKind.RELATION:
-                this.emitRelation(node);
-                break;
-            case NodeKind.OP:
-                this.emitOp(node);
-                break;
-             case NodeKind.FOREACH:
-                this.emitForeach(node);
-                break;
-            default:
-                this.catchup(node.start);
-                this.visitNodes(node.children);
-                break;
-        }
+    switch(node.kind) {
+        case NodeKind.PACKAGE:
+            emitPackage(node);
+            break;
+        case NodeKind.META:
+            emitMeta(node);
+            break;
+        case NodeKind.IMPORT:
+            emitImport(node);
+            break;
+        case NodeKind.USE:
+        case NodeKind.INCLUDE:
+            emitInclude(node);
+            break;
+        case NodeKind.FUNCTION:
+            emitFunction(node);
+            break;
+        case NodeKind.INTERFACE:
+            emitInterface(node);
+            break;
+        case NodeKind.CLASS:
+            emitClass(node);
+            break;
+        case NodeKind.VECTOR:
+            emitVector(node);
+            break;
+        case NodeKind.TYPE:
+            emitType(node);
+            break;
+        case NodeKind.CALL:
+            emitCall(node);
+            break;
+        case NodeKind.NEW:
+            emitNew(node);
+            break;
+        case NodeKind.RELATION:
+            emitRelation(node);
+            break;
+        case NodeKind.OP:
+            emitOp(node);
+            break;
+        case NodeKind.FOREACH:
+            emitForeach(node);
+            break;
+        default:
+            catchup(node.start);
+            visitNodes(node.children);
+            break;
     }
-    
-    private emitPackage(node: Node) {
-        this.catchup(node.start);
-        this.skip(NodeKind.PACKAGE.length);
-        this.insert('module');
-        this.visitNodes(node.children);
-    }
-    
-    private emitMeta(node: Node) {
-        this.catchup(node.start);
-        this.commentNode(node, false);
-    }
-    
-    private emitInclude(node: Node) {
-        this.catchup(node.start);
-        this.commentNode(node, true);
-    }
-    
-    private emitImport(node: Node) {
-        this.catchup(node.start + NodeKind.IMPORT.length + 1);
-        var split = node.text.split('.');
-        this.insert(split[split.length -1] + ' = ');
-        this.catchup(node.end);
-    }
-    
-    private emitInterface(node: Node) {
-        this.emitDeclaration(node);
-       
-        
-        //we'll catchup the other part
-        var content = node.findChild(NodeKind.CONTENT)
-        var contentsNode = content && content.children;
-        var foundVariables: { [name: string]: boolean } = {};
-        if (contentsNode) {
-            contentsNode.forEach(node => {
-                this.visitNode(node.findChild(NodeKind.META_LIST));
-                this.catchup(node.start);
-                if (node.kind === NodeKind.FUNCTION) {
-                    this.skip(8);
-                } else if (node.kind === NodeKind.GET || node.kind === NodeKind.SET) {
-                    var name = node.findChild(NodeKind.NAME),
-                        paramerterList = node.findChild(NodeKind.PARAMETER_LIST); 
-                    if (!foundVariables[name.text]) {
-                        this.skipTo(name.start);
-                        this.catchup(name.end);
-                        foundVariables[name.text] = true;
-                        if (node.kind === NodeKind.GET) {
-                            this.skipTo(paramerterList.end);
-                            var type = node.findChild(NodeKind.TYPE);
-                            if (type) {
-                                this.emitType(type);
-                            }
-                        } else if (node.kind === NodeKind.SET) {
-                            var setParam = paramerterList
-                                .findChild(NodeKind.PARAMETER).children[0];
-                            this.skipTo(setParam.findChild(NodeKind.NAME).end)
-                            var type = setParam.findChild(NodeKind.TYPE);
-                            if (type) {
-                                this.emitType(type);
-                            }
-                            this.skipTo(node.end);
+}
+
+function emitPackage(node: Node) {
+    catchup(node.start);
+    skip(NodeKind.PACKAGE.length);
+    insert('module');
+    visitNodes(node.children);
+}
+
+function emitMeta(node: Node) {
+    catchup(node.start);
+    commentNode(node, false);
+}
+
+function emitInclude(node: Node) {
+    catchup(node.start);
+    commentNode(node, true);
+}
+
+function emitImport(node: Node) {
+    catchup(node.start + NodeKind.IMPORT.length + 1);
+    var split = node.text.split('.');
+    var name = split[split.length -1];
+    insert(name + ' = ');
+    catchup(node.end);
+    state.scope.declarations.push({ name: name });
+}
+
+function emitInterface(node: Node) {
+    emitDeclaration(node);
+
+
+    //we'll catchup the other part
+    state.scope.declarations.push({ name: node.findChild(NodeKind.NAME).text });
+    var content = node.findChild(NodeKind.CONTENT)
+    var contentsNode = content && content.children;
+    var foundVariables: { [name: string]: boolean } = {};
+    if (contentsNode) {
+        contentsNode.forEach(node => {
+            visitNode(node.findChild(NodeKind.META_LIST));
+            catchup(node.start);
+            if (node.kind === NodeKind.FUNCTION) {
+                skip(8);
+            } else if (node.kind === NodeKind.GET || node.kind === NodeKind.SET) {
+                var name = node.findChild(NodeKind.NAME),
+                    paramerterList = node.findChild(NodeKind.PARAMETER_LIST); 
+                if (!foundVariables[name.text]) {
+                    skipTo(name.start);
+                    catchup(name.end);
+                    foundVariables[name.text] = true;
+                    if (node.kind === NodeKind.GET) {
+                        skipTo(paramerterList.end);
+                        var type = node.findChild(NodeKind.TYPE);
+                        if (type) {
+                            emitType(type);
                         }
-                    } else {
-                        this.commentNode(node, true);
+                    } else if (node.kind === NodeKind.SET) {
+                        var setParam = paramerterList
+                            .findChild(NodeKind.PARAMETER).children[0];
+                        skipTo(setParam.findChild(NodeKind.NAME).end)
+                        var type = setParam.findChild(NodeKind.TYPE);
+                        if (type) {
+                            emitType(type);
+                        }
+                        skipTo(node.end);
                     }
                 } else {
-                    //include or import in interface content not supported
-                    this.commentNode(node, true);
+                    commentNode(node, true);
                 }
-            })
-        }
-    }
-    
-    private emitFunction(node: Node) {
-        this.emitDeclaration(node);
-        this.enterFunctionScope(node);
-        var rest = node.getChildFrom(NodeKind.MOD_LIST);
-        this.exitScope();
-        this.visitNodes(rest);
-    }
-    
-    private emitClass(node: Node) {
-        this.emitDeclaration(node);
-        var name = node.findChild(NodeKind.NAME);
-        this.currentClassName = name.text;
-        var content = node.findChild(NodeKind.CONTENT)
-        var contentsNode = content && content.children;
-        if (contentsNode) {
-            //collects declarations
-            this.enterClassScope(contentsNode);
-            contentsNode.forEach(node => {
-                this.visitNode(node.findChild(NodeKind.META_LIST));
-                this.catchup(node.start);
-                switch (node.kind) {
-                    case NodeKind.SET:
-                        this.emitSet(node);
-                        break;
-                    case NodeKind.GET:
-                    case NodeKind.FUNCTION:
-                        this.emitMethod(node);
-                        break;
-                    case NodeKind.VAR_LIST:
-                        this.emitPropertyDecl(node);
-                        break;
-                    case NodeKind.CONST_LIST:
-                        this.emitPropertyDecl(node, true);
-                        break;
-                    default:
-                        this.visitNode(node);
-                }
-            });
-            this.exitScope();
-        }
-        this.currentClassName = null;
-    }
-    
-    
-    private emitSet(node: Node) {
-        this.emitClassField(node);
-        var name = node.findChild(NodeKind.NAME);
-        this.consume('function', name.start);
-        var params = node.findChild(NodeKind.PARAMETER_LIST)
-        this.visitNode(params);
-        this.catchup(params.end)
-        var type = node.findChild(NodeKind.TYPE);
-        if (type) {
-            this.skipTo(type.end);
-        }
-        this.visitNodes(node.getChildFrom(NodeKind.TYPE));
-    }
-    
-    private emitMethod(node: Node) {
-        var name = node.findChild(NodeKind.NAME);
-        if (node.kind !== NodeKind.FUNCTION || name.text !== this.currentClassName) {
-            this.emitClassField(node);
-            this.consume('function', name.start);
-            this.catchup(name.end)
-        } else {
-            var mods = node.findChild(NodeKind.MOD_LIST);
-            if (mods) {
-                this.catchup(mods.start);
-            }
-            this.insert('constructor');
-            this.skipTo(name.end)
-        }
-        this.enterFunctionScope(node);
-        this.visitNodes(node.getChildFrom(NodeKind.NAME));
-    }
-    
-    private emitPropertyDecl(node: Node, isConst = false) {
-        this.emitClassField(node);
-        var name = node.findChild(NodeKind.NAME_TYPE_INIT);
-        this.consume(isConst ? 'const': 'var', name.start);
-        this.visitNode(name);
-    }
-    
-    private emitClassField(node: Node) {
-        var mods = node.findChild(NodeKind.MOD_LIST);
-        if (mods) {
-            this.catchup(mods.start);
-            mods.children.forEach(node => {
-                this.catchup(node.start);
-                if (node.text !== 'private' && node.text !== 'public' && node.text !== 'static') {
-                    this.commentNode(node, false);
-                }  
-                this.catchup(node.end);
-            });
-        }
-    }
-    
-    private emitDeclaration(node: Node) {
-        this.catchup(node.start);
-        this.visitNode(node.findChild(NodeKind.META_LIST));
-        var mods = node.findChild(NodeKind.MOD_LIST);
-        if (mods && mods.children.length) {
-            this.catchup(mods.start);
-            var insertExport = false;
-            mods.children.forEach(node => {
-                if (node.text !== 'private') {
-                    insertExport = true;
-                }  
-                this.skipTo(node.end);
-            }) 
-            if (insertExport) {
-                this.insert('export');
-            }
-        }
-    }
-    
-    private emitType(node: Node) {
-        this.catchup(node.start);
-        this.skip(node.text.length);
-        var type: string;
-        switch(node.text) {
-            case 'String':
-                type = 'string'
-                break;
-            case 'Boolean': 
-                type= 'boolean'
-                break;
-            case 'Number':
-            case 'int':
-            case 'uint':
-                type = 'number'
-                break;
-            case '*':
-                type = 'any'
-                break;
-            case 'Array':
-                type = 'any[]'
-                break;
-            default:
-                type = node.text;
-        }
-        this.insert(type);
-    }
-    
-    private emitVector(node: Node) {
-        this.catchup(node.start);
-        var type = node.findChild(NodeKind.TYPE);
-        if (type) {
-            this.skipTo(type.start);
-            this.emitType(type);
-            this.insert('[]');
-        } else {
-            this.insert('any[]');
-        }
-        this.skipTo(node.end);
-    }
-    
-    private emitNew(node:Node) {
-        this.catchup(node.start);
-        this.isNew = true;
-        this.visitNodes(node.children);
-        this.isNew = false;
-    }
-    
-    private emitCall(node: Node) {
-        this.catchup(node.start);
-        var isNew = this.isNew;
-        this.isNew = false;
-        if (node.children[0].kind === NodeKind.VECTOR) {
-            if (isNew) {
-                var vector = node.children[0];
-                this.catchup(vector.start);
-                this.insert('Array');
-                this.insert('<')
-                var type = vector.findChild(NodeKind.TYPE);
-                if (type) {
-                    this.skipTo(type.start);
-                    this.emitType(type);
-                } else {
-                    this.insert('any');
-                }
-                this.skipTo(vector.end);
-                this.insert('>');
-                this.visitNodes(node.getChildFrom(NodeKind.VECTOR));
-                return;
-            }
-            
-            var args = node.findChild(NodeKind.ARGUMENTS);
-            //vector conversion lets just cast to array
-            if (args.children.length === 1) {
-                this.insert('(<');
-                this.emitVector(node.children[0]);
-                this.insert('>');
-                this.skipTo(args.children[0].start);
-                this.visitNode(args.children[0]);
-                this.catchup(node.end);
-                return;
-            }
-        } 
-        this.visitNodes(node.children);
-    }
-    
-    private emitRelation(node: Node) {
-        this.catchup(node.start);
-        var as = node.findChild(NodeKind.AS);
-        if (as) {
-            if (node.lastChild.kind === NodeKind.PRIMARY) {
-                this.insert('<');
-                this.insert(node.lastChild.text);
-                this.insert('>');
-                this.visitNodes(node.getChildUntil(NodeKind.AS));
-                this.catchup(as.start);
-                this.skipTo(node.end);
             } else {
-                this.commentNode(node, false);
+                //include or import in interface content not supported
+                commentNode(node, true);
             }
-            return;
-        }
-        this.visitNodes(node.children)
+        })
     }
-    
-    private emitOp(node: Node) {
-        this.catchup(node.start);
-        if (node.text === "is") {
-            this.insert('instanceof');
-            this.skipTo(node.end);
-            return;
-        }
-        this.catchup(node.end);
-    }
-    
-    private emitForeach(node: Node) {
-        this.catchup(node.start);
-        this.commentNode(node, false);
-        /*this.catchup(node.start);
-        this.insert('for');
-        this.skip(4);
-        var name  = node.findChild(NodeKind.NAME);
-        if (name) {
-            this.consume('each', name.start);
-            this.catchup(name.start);
-            this.skipTo(name.end);
-            this.insert('var key');
-            
-            var inNode = node.findChild(NodeKind.IN),
-                arrayText = node.children[0].text,
-                block = node.findChild(NodeKind.BLOCK);
-            
-            this.catchup(block.start);
-            this.consume('{', block.children[0].start);
-            this.insert('{\n' + name.text + ' = ' + arrayText + '[' + 'key' + ']');
-        }
-        
-        this.catchup(node.end);*/
-    }
-    
-    
-    private enterClassScope(contentsNode: Node[]) {
-        var found: {[name: string]: boolean };
-            
-        var declarations = contentsNode.map(node => {
-            var nameNode: Node;
-            var isStatic: boolean;
+}
 
+function emitFunction(node: Node) {
+    emitDeclaration(node);
+    enterFunctionScope(node);
+    var rest = node.getChildFrom(NodeKind.MOD_LIST);
+    exitScope();
+    visitNodes(rest);
+}
+
+function emitClass(node: Node) {
+    emitDeclaration(node);
+    var name = node.findChild(NodeKind.NAME);
+    state.currentClassName = name.text;
+    var content = node.findChild(NodeKind.CONTENT)
+    var contentsNode = content && content.children;
+    if (contentsNode) {
+        //collects declarations
+        enterClassScope(contentsNode);
+        contentsNode.forEach(node => {
+            visitNode(node.findChild(NodeKind.META_LIST));
+            catchup(node.start);
             switch (node.kind) {
                 case NodeKind.SET:
+                    emitSet(node);
+                    break;
                 case NodeKind.GET:
                 case NodeKind.FUNCTION:
-                    nameNode = node.findChild(NodeKind.NAME);
+                    emitMethod(node);
                     break;
                 case NodeKind.VAR_LIST:
+                    emitPropertyDecl(node);
+                    break;
                 case NodeKind.CONST_LIST:
-                    nameNode = node.findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                    emitPropertyDecl(node, true);
                     break;
+                default:
+                    visitNode(node);
             }
-            if (!nameNode || found[nameNode.text]) {
-                return null;
-            }
-            found[nameNode.text] = true;
-
-            var modList = node.findChild(NodeKind.MOD_LIST);
-            var isStatic = modList && 
-                modList.children.some(mod => mod.text === 'static');
-            return {
-                name: nameNode.text,
-                bound: isStatic ? this.currentClassName : 'this'
-            };
-        }).filter(el => !!el);
-
-        this.enterScope(declarations);
+        });
+        exitScope();
     }
-    
-    private enterFunctionScope(node: Node) {
-        var block = node.findChild(NodeKind.BLOCK);
-        if (!block) {
-            this.enterScope([]);
+    state.currentClassName = null;
+}
+
+
+function emitSet(node: Node) {
+    emitClassField(node);
+    var name = node.findChild(NodeKind.NAME);
+    consume('function', name.start);
+    var params = node.findChild(NodeKind.PARAMETER_LIST)
+    visitNode(params);
+    catchup(params.end)
+    var type = node.findChild(NodeKind.TYPE);
+    if (type) {
+        skipTo(type.end);
+    }
+    visitNodes(node.getChildFrom(NodeKind.TYPE));
+}
+
+function emitMethod(node: Node) {
+    var name = node.findChild(NodeKind.NAME);
+    if (node.kind !== NodeKind.FUNCTION || name.text !== state.currentClassName) {
+        emitClassField(node);
+        consume('function', name.start);
+        catchup(name.end)
+    } else {
+        var mods = node.findChild(NodeKind.MOD_LIST);
+        if (mods) {
+            catchup(mods.start);
+        }
+        insert('constructor');
+        skipTo(name.end)
+    }
+    enterFunctionScope(node);
+    visitNodes(node.getChildFrom(NodeKind.NAME));
+}
+
+function emitPropertyDecl(node: Node, isConst = false) {
+    emitClassField(node);
+    var name = node.findChild(NodeKind.NAME_TYPE_INIT);
+    consume(isConst ? 'const': 'var', name.start);
+    visitNode(name);
+}
+
+function emitClassField(node: Node) {
+    var mods = node.findChild(NodeKind.MOD_LIST);
+    if (mods) {
+        catchup(mods.start);
+        mods.children.forEach(node => {
+            catchup(node.start);
+            if (node.text !== 'private' && node.text !== 'public' && node.text !== 'static') {
+                commentNode(node, false);
+            }  
+            catchup(node.end);
+        });
+    }
+}
+
+function emitDeclaration(node: Node) {
+    catchup(node.start);
+    visitNode(node.findChild(NodeKind.META_LIST));
+    var mods = node.findChild(NodeKind.MOD_LIST);
+    if (mods && mods.children.length) {
+        catchup(mods.start);
+        var insertExport = false;
+        mods.children.forEach(node => {
+            if (node.text !== 'private') {
+                insertExport = true;
+            }  
+            skipTo(node.end);
+        }) 
+        if (insertExport) {
+            insert('export');
+        }
+    }
+}
+
+function emitType(node: Node) {
+    catchup(node.start);
+    skip(node.text.length);
+    var type: string;
+    switch(node.text) {
+        case 'String':
+            type = 'string'
+            break;
+        case 'Boolean': 
+            type= 'boolean'
+            break;
+        case 'Number':
+        case 'int':
+        case 'uint':
+            type = 'number'
+            break;
+        case '*':
+            type = 'any'
+            break;
+        case 'Array':
+            type = 'any[]'
+            break;
+        default:
+            type = node.text;
+    }
+    insert(type);
+}
+
+function emitVector(node: Node) {
+    catchup(node.start);
+    var type = node.findChild(NodeKind.TYPE);
+    if (type) {
+        skipTo(type.start);
+        emitType(type);
+        insert('[]');
+    } else {
+        insert('any[]');
+    }
+    skipTo(node.end);
+}
+
+function emitNew(node:Node) {
+    catchup(node.start);
+    state.isNew = true;
+    visitNodes(node.children);
+    state.isNew = false;
+}
+
+function emitCall(node: Node) {
+    catchup(node.start);
+    var isNew = isNew;
+    isNew = false;
+    if (node.children[0].kind === NodeKind.VECTOR) {
+        if (isNew) {
+            var vector = node.children[0];
+            catchup(vector.start);
+            insert('Array');
+            insert('<')
+            var type = vector.findChild(NodeKind.TYPE);
+            if (type) {
+                skipTo(type.start);
+                emitType(type);
+            } else {
+                insert('any');
+            }
+            skipTo(vector.end);
+            insert('>');
+            visitNodes(node.getChildFrom(NodeKind.VECTOR));
             return;
         }
-        function traverse(node: Node): Declaration[] {
-            var result = new Array<Declaration>();
-            if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST) {
-                result = result.concat(
-                    node
-                        .findChildren(NodeKind.NAME_TYPE_INIT)
-                        .map(node => ({ name: node.findChild(NodeKind.NAME).text }))
-                );
-            } 
-            if (node.kind !== NodeKind.FUNCTION && node.children && node.children.length) {
-                result = Array.prototype.concat.apply(result, node.children.map(traverse));
-            }
-            return result.filter(decl => !!decl);
+
+        var args = node.findChild(NodeKind.ARGUMENTS);
+        //vector conversion lets just cast to array
+        if (args.children.length === 1) {
+            insert('(<');
+            emitVector(node.children[0]);
+            insert('>');
+            skipTo(args.children[0].start);
+            visitNode(args.children[0]);
+            catchup(node.end);
+            return;
         }
-        this.enterScope(traverse(block));
+    } 
+    visitNodes(node.children);
+}
+
+function emitRelation(node: Node) {
+    catchup(node.start);
+    var as = node.findChild(NodeKind.AS);
+    if (as) {
+        if (node.lastChild.kind === NodeKind.PRIMARY) {
+            insert('<');
+            insert(node.lastChild.text);
+            insert('>');
+            visitNodes(node.getChildUntil(NodeKind.AS));
+            catchup(as.start);
+            skipTo(node.end);
+        } else {
+            commentNode(node, false);
+        }
+        return;
     }
-    
-    private enterScope(decls: Declaration[]) {
-        this.scope = {
-            parent: this.scope,
-            declarations: decls
+    visitNodes(node.children)
+}
+
+function emitOp(node: Node) {
+    catchup(node.start);
+    if (node.text === "is") {
+        insert('instanceof');
+        skipTo(node.end);
+        return;
+    }
+    catchup(node.end);
+}
+
+function emitForeach(node: Node) {
+    catchup(node.start);
+    commentNode(node, false);
+    /*catchup(node.start);
+    insert('for');
+    skip(4);
+    var name  = node.findChild(NodeKind.NAME);
+    if (name) {
+        consume('each', name.start);
+        catchup(name.start);
+        skipTo(name.end);
+        insert('var key');
+
+        var inNode = node.findChild(NodeKind.IN),
+            arrayText = node.children[0].text,
+            block = node.findChild(NodeKind.BLOCK);
+
+        catchup(block.start);
+        consume('{', block.children[0].start);
+        insert('{\n' + name.text + ' = ' + arrayText + '[' + 'key' + ']');
+    }
+
+    catchup(node.end);*/
+}
+
+
+function enterClassScope(contentsNode: Node[]) {
+    var found: {[name: string]: boolean } = {};
+
+    var declarations = contentsNode.map(node => {
+        var nameNode: Node;
+        var isStatic: boolean;
+
+        switch (node.kind) {
+            case NodeKind.SET:
+            case NodeKind.GET:
+            case NodeKind.FUNCTION:
+                nameNode = node.findChild(NodeKind.NAME);
+                break;
+            case NodeKind.VAR_LIST:
+            case NodeKind.CONST_LIST:
+                nameNode = node.findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                break;
+        }
+        if (!nameNode || found[nameNode.text]) {
+            return null;
+        }
+        found[nameNode.text] = true;
+
+        var modList = node.findChild(NodeKind.MOD_LIST);
+        var isStatic = modList && 
+            modList.children.some(mod => mod.text === 'static');
+        return {
+            name: nameNode.text,
+            bound: isStatic ? state.currentClassName : 'this'
         };
+    }).filter(el => !!el);
+
+    enterScope(declarations);
+}
+
+function enterFunctionScope(node: Node) {
+    var block = node.findChild(NodeKind.BLOCK);
+    if (!block) {
+        enterScope([]);
+        return;
     }
-    
-    private exitScope() {
-        this.scope = this.scope && this.scope.parent;
+    function traverse(node: Node): Declaration[] {
+        var result = new Array<Declaration>();
+        if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST) {
+            result = result.concat(
+                node
+                    .findChildren(NodeKind.NAME_TYPE_INIT)
+                    .map(node => ({ name: node.findChild(NodeKind.NAME).text }))
+            );
+        } 
+        if (node.kind !== NodeKind.FUNCTION && node.children && node.children.length) {
+            result = Array.prototype.concat.apply(result, node.children.map(traverse));
+        }
+        return result.filter(decl => !!decl);
     }
-    
-    private commentNode(node: Node, catchSemi:boolean) {
-        this.insert('/*');
-        this.catchup(node.end);
-        var index = this.index;
-        if (catchSemi) {
-            while(true) {
-                if (index >= this.content.length) {
-                    break;
-                }
-                if (this.content[index] === '\n') {
-                    this.catchup(index);
-                    break;
-                }
-                if (this.content[index] === ';') {
-                    this.catchup(index + 1);
-                    break;
-                }
-                index++;
+    enterScope(traverse(block));
+}
+
+function enterScope(decls: Declaration[]) {
+    state.scope = {
+        parent: state.scope,
+        declarations: decls,
+        get isTopLevel() {
+            return !state.scope;
+        }
+    };
+}
+
+function exitScope() {
+    state.scope = state.scope && state.scope.parent;
+}
+
+function commentNode(node: Node, catchSemi:boolean) {
+    insert('/*');
+    catchup(node.end);
+    var index = state.index;
+    if (catchSemi) {
+        while(true) {
+            if (index >= data.source.length) {
+                break;
             }
+            if (data.source[index] === '\n') {
+                catchup(index);
+                break;
+            }
+            if (data.source[index] === ';') {
+                catchup(index + 1);
+                break;
+            }
+            index++;
         }
-        this.insert('*/'); 
     }
-    private catchup(index: number) {
-        if (index < this.index) {
-            return;
-        }
-        while (this.index !== index) {
-            this.output+= this.content[this.index];
-            this.index++;
-        }
+    insert('*/'); 
+}
+
+function catchup(index: number) {
+    if (state.index > index) {
+        return;
     }
-    
-    private skipTo(index: number) {
-        this.index = index;
-    }
-    
-    private skip(number: number) {
-        this.index += number;
-    }
-    
-    private insert(string: string) {
-        this.output += string;
-    }
-    
-    private consume(string: string, limit: number) {
-        var index = this.content.indexOf(string, this.index) + string.length;
-        if (index > limit || index < this.index) {
-            throw new Error('invalid consume');
-        }
-        this.index = index;
+    while (state.index !== index) {
+        output += data.source[state.index];
+        state.index++;
     }
 }
 
-module Emitter {
-    export interface EmitterOptions { }
+function skipTo(index: number) {
+    state.index = index;
 }
 
-export = Emitter;
+function skip(number: number) {
+    state.index += number;
+}
+
+function insert(string: string) {
+    output += string;
+}
+
+function consume(string: string, limit: number) {
+    var index = data.source.indexOf(string, index) + string.length;
+    if (index > limit || index < index) {
+        throw new Error('invalid consume');
+    }
+    index = index;
+}
+
+export interface EmitterOptions { }
