@@ -34,6 +34,17 @@ function filterAST(node:Node): void {
     });
 }
 
+
+interface Scope {
+    parent: Scope;
+    declarations: Declaration[]
+}
+
+interface Declaration { 
+    bound: string; 
+    name: string; 
+}
+
 class Emitter {
     private index: number = 0;
     private output: string = '';
@@ -44,10 +55,7 @@ class Emitter {
     
     private currentClassName: string;
     
-    private currenClassMembers: {
-        isStatic: boolean;
-        name: string;
-    }[];
+    private scope: Scope;
     
     private isNew: boolean;
     
@@ -215,32 +223,39 @@ class Emitter {
         var content = node.findChild(NodeKind.CONTENT)
         var contentsNode = content && content.children;
         if (contentsNode) {
-            this.currenClassMembers = [];
-            contentsNode.forEach(node => {
-                var name: Node;
+            //collects declarations
+            var found: {[name: string]: boolean };
+            
+            var declarations = contentsNode.map(node => {
+                var nameNode: Node;
+                var isStatic: boolean;
+                
                 switch (node.kind) {
                     case NodeKind.SET:
                     case NodeKind.GET:
                     case NodeKind.FUNCTION:
-                        name = node.findChild(NodeKind.NAME)
+                        nameNode = node.findChild(NodeKind.NAME);
                         break;
                     case NodeKind.VAR_LIST:
-                        name = node.findChild(NodeKind.VAR_LIST).findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
-                        break;
                     case NodeKind.CONST_LIST:
-                        name = node.findChild(NodeKind.CONST_LIST).findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
+                        nameNode = node.findChild(NodeKind.NAME_TYPE_INIT).findChild(NodeKind.NAME);
                         break;
                 }
+                if (!nameNode || found[nameNode.text]) {
+                    return null;
+                }
+                found[nameNode.text] = true;
                 
                 var modList = node.findChild(NodeKind.MOD_LIST);
                 var isStatic = modList && 
                     modList.children.some(mod => mod.text === 'static');
-               
-                this.currenClassMembers.push({
-                    isStatic: isStatic,
-                    name : name.text
-                });
-            });
+                return {
+                    name: nameNode.text,
+                    bound: isStatic ? this.currentClassName : 'this'
+                };
+            }).filter(el => !!el);
+            
+            this.enterScope(declarations);
             
             contentsNode.forEach(node => {
                 this.visitNode(node.findChild(NodeKind.META_LIST));
@@ -479,6 +494,12 @@ class Emitter {
         this.catchup(node.end);*/
     }
     
+    private enterScope(decls: Declaration[]) {
+        this.scope = {
+            parent: this.scope,
+            declarations: decls
+        };
+    }
     
     private commentNode(node: Node, catchSemi:boolean) {
         this.insert('/*');
