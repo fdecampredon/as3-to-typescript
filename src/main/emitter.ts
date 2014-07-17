@@ -16,23 +16,43 @@ function assign(target: any, ...items: any[]): any {
 }
 
 
+var keywordsCheck: { [index: string]: boolean } 
+    = Object.keys(KeyWords).reduce(
+        (result: { [index: string]: boolean}, key: string) => {
+            var keyword: string = (<any>KeyWords)[key];
+            result[keyword] = true;
+            return result;
+        }, <{ [index: string]: boolean}>{}
+    );
+
+function isKeyWord(text: string): boolean {
+    return !keywordsCheck[text];
+}
+
+
 
 var defaultEmitterOptions = {
     lineSeparator: '\n'
 }
 
-function filterAST(node:Node): Node {
+function transformAST(node:Node, parentNode: Node): Node {
     //we don't care about comment
-    node.children = node.children.filter(
-        child  => child && 
-            child.kind !== NodeKind.AS_DOC && 
-            child.kind !== NodeKind.MULTI_LINE_COMMENT
+    var newNode=  new Node(
+        node.kind, 
+        node.start,
+        node.end,
+        node.text,
+        [],
+        parentNode
     );
     
-    node.children.forEach(child => {
-        filterAST(child);
-    });
-    return node;
+    newNode.children = node.children.filter(
+        child => !!child && 
+            child.kind !== NodeKind.AS_DOC && 
+            child.kind !== NodeKind.MULTI_LINE_COMMENT
+    ).map(child => transformAST(child, newNode))
+    
+    return newNode;
 }
 
 
@@ -48,7 +68,6 @@ interface Declaration {
 }
 
 var data: {
-    ast : Node;
     source: string;
     options: EmitterOptions;
 }
@@ -58,16 +77,12 @@ var state: {
     currentClassName: string;
     scope: Scope;
     isNew: boolean;
+    parentNode?: Node
 };
 
 var output: string;
-
-
-    
-    
 export function emit(ast: Node, source: string, options?: EmitterOptions) {
     data = {
-        ast: filterAST(ast),
         source: source,
         options: assign(defaultEmitterOptions, options || {})
     };
@@ -85,7 +100,7 @@ export function emit(ast: Node, source: string, options?: EmitterOptions) {
     
     
     enterScope([]);
-    visitNode(ast);
+    visitNode(transformAST(ast, null));
     catchup(data.source.length -1);
     exitScope();
     return output;
@@ -98,58 +113,34 @@ function visitNodes(nodes: Node[]) {
     nodes.forEach(node =>  visitNode(node));
 }
 
+var visitors: {[kind: string]: (node: Node) => void } = {};
+
+visitors[NodeKind.PACKAGE] = emitPackage;
+visitors[NodeKind.META] = emitMeta;
+visitors[NodeKind.IMPORT] = emitImport;
+visitors[NodeKind.INCLUDE] = visitors[NodeKind.USE] = emitInclude;
+visitors[NodeKind.FUNCTION] = emitFunction;
+visitors[NodeKind.INTERFACE] = emitInterface;
+visitors[NodeKind.CLASS] = emitClass;
+visitors[NodeKind.VECTOR] = emitVector;
+visitors[NodeKind.TYPE] = emitType;
+visitors[NodeKind.CALL] = emitCall;
+visitors[NodeKind.NEW] = emitNew;
+visitors[NodeKind.RELATION] = emitRelation;
+visitors[NodeKind.OP] = emitOp;
+visitors[NodeKind.FOREACH] = emitForeach;
+visitors[NodeKind.LITERAL] = emitLiteral;
+
+
 function visitNode(node: Node) {
     if (!node) {
         return;
     }
-    switch(node.kind) {
-        case NodeKind.PACKAGE:
-            emitPackage(node);
-            break;
-        case NodeKind.META:
-            emitMeta(node);
-            break;
-        case NodeKind.IMPORT:
-            emitImport(node);
-            break;
-        case NodeKind.USE:
-        case NodeKind.INCLUDE:
-            emitInclude(node);
-            break;
-        case NodeKind.FUNCTION:
-            emitFunction(node);
-            break;
-        case NodeKind.INTERFACE:
-            emitInterface(node);
-            break;
-        case NodeKind.CLASS:
-            emitClass(node);
-            break;
-        case NodeKind.VECTOR:
-            emitVector(node);
-            break;
-        case NodeKind.TYPE:
-            emitType(node);
-            break;
-        case NodeKind.CALL:
-            emitCall(node);
-            break;
-        case NodeKind.NEW:
-            emitNew(node);
-            break;
-        case NodeKind.RELATION:
-            emitRelation(node);
-            break;
-        case NodeKind.OP:
-            emitOp(node);
-            break;
-        case NodeKind.FOREACH:
-            emitForeach(node);
-            break;
-        default:
-            catchup(node.start);
-            visitNodes(node.children);
-            break;
+    if (visitors.hasOwnProperty(node.kind)) {
+        visitors[node.kind](node);
+    } else {
+        catchup(node.start);
+        visitNodes(node.children);
     }
 }
 
@@ -394,8 +385,8 @@ function emitNew(node:Node) {
 
 function emitCall(node: Node) {
     catchup(node.start);
-    var isNew = isNew;
-    isNew = false;
+    var isNew = state.isNew;
+    state.isNew = false;
     if (node.children[0].kind === NodeKind.VECTOR) {
         if (isNew) {
             var vector = node.children[0];
@@ -434,7 +425,7 @@ function emitRelation(node: Node) {
     catchup(node.start);
     var as = node.findChild(NodeKind.AS);
     if (as) {
-        if (node.lastChild.kind === NodeKind.PRIMARY) {
+        if (node.lastChild.kind === NodeKind.LITERAL) {
             insert('<');
             insert(node.lastChild.text);
             insert('>');
@@ -484,6 +475,27 @@ function emitForeach(node: Node) {
     catchup(node.end);*/
 }
 
+function emitLiteral(node: Node) {
+    catchup(node.start);
+    if (!isKeyWord(node.text)) {
+        visitNodes(node.children);
+        return;
+    }
+    if (node.parent && node.parent.kind === NodeKind.DOT) {
+        //in case of dot just check the first
+        if(node.parent.children[0] !== node) {
+            return;
+        }
+    }
+    var def = findDefInScope(node.text);
+    if (def && def.bound) {
+        insert(def.bound + '.');
+    }
+    if (!def) {
+        insert('this.');
+    }
+}
+
 
 function enterClassScope(contentsNode: Node[]) {
     var found: {[name: string]: boolean } = {};
@@ -528,7 +540,8 @@ function enterFunctionScope(node: Node) {
     }
     function traverse(node: Node): Declaration[] {
         var result = new Array<Declaration>();
-        if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST) {
+        if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST ||
+            node.kind === NodeKind.VAR || node.kind === NodeKind.CONST) {
             result = result.concat(
                 node
                     .findChildren(NodeKind.NAME_TYPE_INIT)
@@ -555,6 +568,19 @@ function enterScope(decls: Declaration[]) {
 
 function exitScope() {
     state.scope = state.scope && state.scope.parent;
+}
+
+function findDefInScope(text: string) {
+    var scope = state.scope;
+    while(scope) {
+        for (var i = 0; i< scope.declarations.length; i++) {
+            if (scope.declarations[i].name === text) {
+                return scope.declarations[i];
+            }
+        }
+        scope = scope.parent;
+    }
+    return null;
 }
 
 function commentNode(node: Node, catchSemi:boolean) {
@@ -603,11 +629,11 @@ function insert(string: string) {
 }
 
 function consume(string: string, limit: number) {
-    var index = data.source.indexOf(string, index) + string.length;
-    if (index > limit || index < index) {
+    var index = data.source.indexOf(string, state.index) + string.length;
+    if (index > limit || index < state.index) {
         throw new Error('invalid consume');
     }
-    index = index;
+    state.index = index;
 }
 
 export interface EmitterOptions { }

@@ -5,7 +5,8 @@ class Node {
         public start: number,
         public end: number,
         public text?: string,
-        public children?: Node[]
+        public children?: Node[],
+        public parent? :Node
     ) {
         if (!this.children) {
             this.children = []

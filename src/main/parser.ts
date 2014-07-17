@@ -368,30 +368,33 @@ class AS3Parser {
      * @throws TokenException
      */
     private parsePrimaryExpression(): Node {
-        var result: Node = new Node(NodeKind.PRIMARY, this.tok.index, this.tok.end, this.tok.text);
-
         if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
-            result.children.push(this.parseArrayLiteral());
+            return this.parseArrayLiteral();
         }
         else if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
-            result.children.push(this.parseObjectLiteral());
+            return this.parseObjectLiteral();
         }
         else if (this.tokIs(KeyWords.FUNCTION)) {
-            result.children.push(this.parseLambdaExpression());
+            return this.parseLambdaExpression();
         }
         else if (this.tokIs(KeyWords.NEW)) {
             return this.parseNewExpression();
         }
         else if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
-            result.children.push(this.parseEncapsulatedExpression());
+            return this.parseEncapsulatedExpression();
         } else if (this.tok.text === 'Vector') {
             return this.parseVector();
         }
         else {
+            var result:Node;
+            if (this.tok.isNumeric || !/('|")/.test(this.tok.text[0])) {
+                result = new Node(NodeKind.LITERAL, this.tok.index, this.tok.end, this.tok.text);
+            } else {
+                result = new Node(NodeKind.IDENTIFIER,  this.tok.index, this.tok.end, this.tok.text);
+            }
             this.nextToken(true);
+            return result;
         }
-        if (result.lastChild) { result.end = result.lastChild.end }
-        return result;
     }
 
     /**
@@ -650,7 +653,7 @@ class AS3Parser {
     }
 
     private parseArrayAccessor(node: Node): Node {
-        var result: Node = new Node(NodeKind.ARRAY_ACCESSOR, this.tok.index, -1);
+        var result: Node = new Node(NodeKind.ARRAY_ACCESSOR, node.start, -1);
         result.children.push(node);
         while (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
             this.nextToken(true);
@@ -918,7 +921,7 @@ class AS3Parser {
 
     private parseDecrement(node: Node): Node {
         this.nextToken(true);
-        var result: Node = new Node(NodeKind.POST_DEC, this.tok.index, -1);
+        var result: Node = new Node(NodeKind.POST_DEC, node.start, this.tok.end);
         result.children.push(node);
         result.end = node.end;
         return result;
@@ -960,11 +963,10 @@ class AS3Parser {
             result.end = node.end;
             return result;
         }
-        var result: Node = new Node(NodeKind.DOT, this.tok.index, -1);
+        var result: Node = new Node(NodeKind.DOT, node.start, -1);
         result.children.push(node);
-        result.children.push(new Node(NodeKind.PRIMARY, this.tok.index, this.tok.end, this.tok.text))
+        result.children.push(new Node(NodeKind.LITERAL, this.tok.index, this.tok.end, this.tok.text))
         this.nextToken(true);
-        //result.children.push(this.parseExpression());
         result.end = result.children.reduce((index: number, child: Node) => {
             return Math.max(index, child ? child.end : 0);
         }, 0);

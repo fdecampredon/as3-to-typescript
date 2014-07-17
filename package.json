@@ -7,7 +7,8 @@
     "test": "node test/runner generate && node test/runner compare",
     "generate": "node test/runner generate",
     "accept": "node test/runner accept",
-    "compile": "tsc --module 'commonjs' --outDir lib --target es5 src/main/parser.ts src/main/emitter.ts"
+    "compile": "tsc --module 'commonjs' --outDir lib --target es5 src/main/parser.ts src/main/emitter.ts",
+    "watch": "tsc --module 'commonjs' --outDir lib --target es5 --watch src/main/parser.ts src/main/emitter.ts"
   },
   "keywords": [
     "actionscript",
