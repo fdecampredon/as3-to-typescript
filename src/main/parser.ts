@@ -1084,6 +1084,7 @@ class AS3Parser {
         var expr = this.parseExpression()
         result.children.push(new Node(NodeKind.IN, index, expr.end, null, [expr]));
         result.kind = NodeKind.FORIN;
+        this.consume(Operators.RIGHT_PARENTHESIS);
         return result;
     }
 
