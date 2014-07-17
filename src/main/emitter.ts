@@ -31,9 +31,7 @@ function isKeyWord(text: string): boolean {
 
 
 
-var defaultEmitterOptions = {
-    lineSeparator: '\n'
-}
+
 
 function transformAST(node:Node, parentNode: Node): Node {
     //we don't care about comment
@@ -73,6 +71,14 @@ var globVars = [
 interface Declaration { 
     bound?: string; 
     name: string; 
+}
+
+export interface EmitterOptions { 
+    lineSeparator: string;
+}
+
+var defaultEmitterOptions = {
+    lineSeparator: '\n'
 }
 
 var data: {
@@ -137,7 +143,6 @@ visitors[NodeKind.CALL] = emitCall;
 visitors[NodeKind.NEW] = emitNew;
 visitors[NodeKind.RELATION] = emitRelation;
 visitors[NodeKind.OP] = emitOp;
-visitors[NodeKind.FOREACH] = emitForeach;
 visitors[NodeKind.IDENTIFIER] = emitIdent;
 
 
@@ -462,30 +467,6 @@ function emitOp(node: Node) {
     catchup(node.end);
 }
 
-function emitForeach(node: Node) {
-    catchup(node.start);
-    commentNode(node, false);
-    /*catchup(node.start);
-    insert('for');
-    skip(4);
-    var name  = node.findChild(NodeKind.NAME);
-    if (name) {
-        consume('each', name.start);
-        catchup(name.start);
-        skipTo(name.end);
-        insert('var key');
-
-        var inNode = node.findChild(NodeKind.IN),
-            arrayText = node.children[0].text,
-            block = node.findChild(NodeKind.BLOCK);
-
-        catchup(block.start);
-        consume('{', block.children[0].start);
-        insert('{\n' + name.text + ' = ' + arrayText + '[' + 'key' + ']');
-    }
-
-    catchup(node.end);*/
-}
 
 function emitIdent(node: Node) {
     catchup(node.start);
@@ -658,5 +639,3 @@ function consume(string: string, limit: number) {
     }
     state.index = index;
 }
-
-export interface EmitterOptions { }
