@@ -1949,7 +1949,8 @@ package com.deCampredon.spark.components
 			if(disabledDays && disabledDays.indexOf(date.day)!=-1)
 				return false;
 			if(disabledRanges) {
-				for each(var range:* in disabledRanges) {
+				for (var i in disabledRanges) {
+                    var range:*  = disabledRanges[i];
 					if(range is Date && date.time == range.time) {
 						return false;
 					}
@@ -1957,7 +1958,8 @@ package com.deCampredon.spark.components
 						return false;
 					}
 				}
-                for each(range in disabledRanges) {
+                for(i in disabledRanges) {
+                    var range:*  = disabledRanges[i];
 					if(range is Date && date.time == range.time) {
 						return false;
 					}
