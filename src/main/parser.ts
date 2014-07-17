@@ -1739,12 +1739,12 @@ class AS3Parser {
         if (!this.tokIs(Operators.SEMI_COLUMN)) {
             if (this.tokIs(KeyWords.VAR)) {
                 var varList = this.parseVarList(null, null)
-                result.children.push(new Node(NodeKind.INIT, varList.start, varList.end, null, []));
+                result.children.push(new Node(NodeKind.INIT, varList.start, varList.end, null, [varList]));
             }
             else {
                 this.isInFor = true;
                 var expr = this.parseExpression();
-                result.children.push(new Node(NodeKind.INIT, expr.start, expr.end, null, []));
+                result.children.push(new Node(NodeKind.INIT, expr.start, expr.end, null, [expr]));
                 this.isInFor = false;
             }
             if (this.tokIs(NodeKind.IN)) {

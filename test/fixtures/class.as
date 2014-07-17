@@ -478,7 +478,7 @@ package com.deCampredon.spark.components
 		public function DateChooser(value:Date = null)
 		{
 			super();
-			var currentDate:Date = value ? value : new Date();
+			var currentDate:Date = value ? value : new Date(), hello: string;
 			displayedMonth = currentDate.month;
 			displayedYear = currentDate.fullYear;
 			monthNames = null;
