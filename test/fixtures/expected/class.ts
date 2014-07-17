@@ -478,12 +478,12 @@ module com.deCampredon.spark.components
 		constructor(value:Date = null)
 		{
 			super();
-			var currentDate:Date = value ? value : new Date();
-			displayedMonth = currentDate.month;
-			displayedYear = currentDate.fullYear;
-			monthNames = null;
-			dayNames = null;
-			firstDayOfWeek  = NaN;
+			var currentDate:Date = value ? value : new Date(), hello: string;
+			this.displayedMonth = currentDate.month;
+			this.displayedYear = currentDate.fullYear;
+			this.monthNames = null;
+			this.dayNames = null;
+			this.firstDayOfWeek  = NaN;
 		}
 
 
@@ -549,7 +549,7 @@ module com.deCampredon.spark.components
 		 * @private
 		 */
 		/*override*/ public get baselinePosition():number {
-			return getBaselinePositionForPart(<IVisualElement>monthLabelDisplay );
+			return this.getBaselinePositionForPart(<IVisualElement>this.monthLabelDisplay );
 		}
 
 		//----------------------------------
@@ -568,24 +568,24 @@ module com.deCampredon.spark.components
 		 */
 		public get selectedDate():Date
 		{
-			return _selectedDate;
+			return this._selectedDate;
 		}
 
 		public set selectedDate(value:Date)
 		{
-			if( _selectedDate == value || ( value && !isEnableddDate(value) ) )
+			if( this._selectedDate == value || ( value && !this.isEnableddDate(value) ) )
 				return;
 
 			var event:DateChooserSelectionEvent = new DateChooserSelectionEvent(DateChooserSelectionEvent.SELECTION_CHANGE);
-			event.previousDate = selectedDate;
+			event.previousDate = this.selectedDate;
 			event.newDate = value;
 
-			_selectedDate = value;
+			this._selectedDate = value;
 
-			selectedDateChanged = true;
-			invalidateProperties();
+			this.selectedDateChanged = true;
+			this.invalidateProperties();
 
-			dispatchEvent(event);
+			this.dispatchEvent(event);
 		}
 
 
@@ -622,7 +622,7 @@ module com.deCampredon.spark.components
 		 */
 		public get displayedMonth():number
 		{
-			return _displayedMonth;
+			return this._displayedMonth;
 		}
 
 		/**
@@ -630,14 +630,14 @@ module com.deCampredon.spark.components
 		 */
 		public set displayedMonth(value:number)
 		{
-			if (value < 0 || value > 11 || displayedMonth == value)
+			if (value < 0 || value > 11 || this.displayedMonth == value)
 				return;
 
-			_displayedMonth = value;
-			displayedMonthChanged = true;
+			this._displayedMonth = value;
+			this.displayedMonthChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("displayedMonthChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("displayedMonthChanged");
 		}
 
 
@@ -671,7 +671,7 @@ module com.deCampredon.spark.components
 		 */
 		public get displayedYear():number
 		{
-			return _displayedYear;
+			return this._displayedYear;
 		}
 
 		/**
@@ -679,14 +679,14 @@ module com.deCampredon.spark.components
 		 */
 		public set displayedYear(value:number)
 		{
-			if (displayedYear == value || value < minYear || value > maxYear)
+			if (this.displayedYear == value || value < this.minYear || value > this.maxYear)
 				return;
 
-			_displayedYear = value;
-			displayedYearChanged = true;
+			this._displayedYear = value;
+			this.displayedYearChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("displayedYearChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("displayedYearChanged");
 		}
 
 
@@ -729,7 +729,7 @@ module com.deCampredon.spark.components
 		 */
 		public get firstDayOfWeek():number
 		{
-			return _firstDayOfWeek;
+			return this._firstDayOfWeek;
 		}
 
 		/**
@@ -737,20 +737,20 @@ module com.deCampredon.spark.components
 		 */
 		public set firstDayOfWeek(value:number)
 		{
-			if (firstDayOfWeek == value)
+			if (this.firstDayOfWeek == value)
 				return;
 
-			firstDayOfWeekOverride  = value;
+			this.firstDayOfWeekOverride  = value;
 
-			_firstDayOfWeek = !isNaN(value)  ?
+			this._firstDayOfWeek = !isNaN(value)  ?
 										int(value) :
-										resourceManager.getInt(
+										this.resourceManager.getInt(
 											"controls", "firstDayOfWeek");
 
-			firstDayOfWeekChanged = true;
+			this.firstDayOfWeekChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("firstDayOfWeekChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("firstDayOfWeekChanged");
 		}
 
 		//----------------------------------
@@ -786,7 +786,7 @@ module com.deCampredon.spark.components
 		 */
 		public get dayNames():string[]
 		{
-			return _dayNames?_dayNames.concat():null;
+			return this._dayNames?this._dayNames.concat():null;
 		}
 
 		/**
@@ -796,18 +796,18 @@ module com.deCampredon.spark.components
 		{
 			if(value && value.length!=7)
 				return;
-			dayNamesOverride = value;
+			this.dayNamesOverride = value;
 
-			_dayNames = value != null ?
-				value : (<string[]>getStringArray("controls", "dayNamesShortest"))
+			this._dayNames = value != null ?
+				value : (<string[]>this.resourceManager.getStringArray("controls", "dayNamesShortest"))
 
 			// _dayNames will be null if there are no resources.
-			_dayNames = _dayNames ? _dayNames.concat() : null;
+			this._dayNames = this._dayNames ? this._dayNames.concat() : null;
 
-			dayNamesChanged = true;
+			this.dayNamesChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("dayNamesChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("dayNamesChanged");
 		}
 
 
@@ -845,7 +845,7 @@ module com.deCampredon.spark.components
 		 */
 		public get monthNames():string[]
 		{
-			return _monthNames?_monthNames.concat():null;
+			return this._monthNames?this._monthNames.concat():null;
 		}
 
 		/**
@@ -856,18 +856,18 @@ module com.deCampredon.spark.components
 			if(value &&  value.length!=12)
 				return;
 
-			monthNamesOverride = value;
+			this.monthNamesOverride = value;
 
-			_monthNames = value != null ?
-				value : (<string[]>getStringArray("SharedResources", "monthNames"));
+			this._monthNames = value != null ?
+				value : (<string[]>this.resourceManager.getStringArray("SharedResources", "monthNames"));
 
 			// _monthNames will be null if there are no resources.
-			_monthNames = _monthNames ? _monthNames.concat() : null;
+			this._monthNames = this._monthNames ? this._monthNames.concat() : null;
 
-			monthNamesChanged = true;
+			this.monthNamesChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("monthNamesChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("monthNamesChanged");
 		}
 
 
@@ -903,7 +903,7 @@ module com.deCampredon.spark.components
 		 */
 		public get monthSymbol():string
 		{
-			return _monthSymbol;
+			return this._monthSymbol;
 		}
 
 		/**
@@ -911,17 +911,17 @@ module com.deCampredon.spark.components
 		 */
 		public set monthSymbol(value:string)
 		{
-			monthSymbolOverride = value;
+			this.monthSymbolOverride = value;
 
-			_monthSymbol = value != null ?
+			this._monthSymbol = value != null ?
 				value :
-				resourceManager.getString(
+				this.resourceManager.getString(
 					"SharedResources", "monthSymbol");
 
-			monthSymbolChanged = true;
+			this.monthSymbolChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("monthSymbolChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("monthSymbolChanged");
 		}
 
 		//----------------------------------
@@ -957,7 +957,7 @@ module com.deCampredon.spark.components
 		 */
 		public get yearSymbol():string
 		{
-			return _yearSymbol;
+			return this._yearSymbol;
 		}
 
 		/**
@@ -965,16 +965,16 @@ module com.deCampredon.spark.components
 		 */
 		public set yearSymbol(value:string)
 		{
-			yearSymbolOverride = value;
+			this.yearSymbolOverride = value;
 
-			_yearSymbol = value != null ?
+			this._yearSymbol = value != null ?
 				value :
-				resourceManager.getString(
+				this.resourceManager.getString(
 					"controls", "yearSymbol");
 
-			if(yearNavigator)
-				yearNavigator.yearSymbol = yearSymbol;
-			dispatchChangeEvent("yearSymbolChanged");
+			if(this.yearNavigator)
+				this.yearNavigator.yearSymbol = this.yearSymbol;
+			this.dispatchChangeEvent("yearSymbolChanged");
 		}
 
 		//----------------------------------
@@ -1003,7 +1003,7 @@ module com.deCampredon.spark.components
 		 */
 		public get yearNavigationEnabled():boolean
 		{
-			return _yearNavigationEnabled;
+			return this._yearNavigationEnabled;
 		}
 
 		/**
@@ -1011,10 +1011,10 @@ module com.deCampredon.spark.components
 		 */
 		public set yearNavigationEnabled(value:boolean)
 		{
-			if(_yearNavigationEnabled != value) {
-				_yearNavigationEnabled = value;
-				invalidateSkinState();
-				dispatchChangeEvent("yearNavigationEnabledChanged");
+			if(this._yearNavigationEnabled != value) {
+				this._yearNavigationEnabled = value;
+				this.invalidateSkinState();
+				this.dispatchChangeEvent("yearNavigationEnabledChanged");
 			}
 		}
 
@@ -1047,7 +1047,7 @@ module com.deCampredon.spark.components
 		 */
 		public get maxYear():number
 		{
-			return _maxYear;
+			return this._maxYear;
 		}
 
 		/**
@@ -1055,12 +1055,12 @@ module com.deCampredon.spark.components
 		 */
 		public set maxYear(value:number)
 		{
-			if (_maxYear == value || value < _minYear)
+			if (this._maxYear == value || value < this._minYear)
 				return;
-			maxYearChanged = true;
-			_maxYear = value;
-			invalidateProperties();
-			dispatchChangeEvent("maxYearChanged");
+			this.maxYearChanged = true;
+			this._maxYear = value;
+			this.invalidateProperties();
+			this.dispatchChangeEvent("maxYearChanged");
 		}
 
 		//----------------------------------
@@ -1092,7 +1092,7 @@ module com.deCampredon.spark.components
 		 */
 		public get minYear():number
 		{
-			return _minYear;
+			return this._minYear;
 		}
 
 		/**
@@ -1100,12 +1100,12 @@ module com.deCampredon.spark.components
 		 */
 		public set minYear(value:number)
 		{
-			if (_minYear == value || _maxYear<value)
+			if (this._minYear == value || this._maxYear<value)
 				return;
-			minYearChanged = true;
-			_minYear = value;
-			invalidateProperties();
-			dispatchChangeEvent("minYearChanged");
+			this.minYearChanged = true;
+			this._minYear = value;
+			this.invalidateProperties();
+			this.dispatchChangeEvent("minYearChanged");
 		}
 
 		//----------------------------------
@@ -1136,7 +1136,7 @@ module com.deCampredon.spark.components
 		 */
 		public get showToday():boolean
 		{
-			return _showToday;
+			return this._showToday;
 		}
 
 		/**
@@ -1144,12 +1144,12 @@ module com.deCampredon.spark.components
 		 */
 		public set showToday(value:boolean)
 		{
-			if(showToday == value)
+			if(this.showToday == value)
 				return;
-			_showToday = value;
-			showTodayChanged = true;
-			invalidateProperties();
-			dispatchChangeEvent("showTodayChanged");
+			this._showToday = value;
+			this.showTodayChanged = true;
+			this.invalidateProperties();
+			this.dispatchChangeEvent("showTodayChanged");
 		}
 
 
@@ -1187,7 +1187,7 @@ module com.deCampredon.spark.components
 		 */
 		public get disabledDays():number[]
 		{
-			return _disabledDays?_disabledDays.concat():null;
+			return this._disabledDays?this._disabledDays.concat():null;
 		}
 
 		/**
@@ -1195,10 +1195,10 @@ module com.deCampredon.spark.components
 		 */
 		public set disabledDays(value:number[])
 		{
-			_disabledDays = value?value.concat():null;
-			disabledDaysChanged = true;
-			invalidateProperties();
-			dispatchChangeEvent("disabledDaysChanged");
+			this._disabledDays = value?value.concat():null;
+			this.disabledDaysChanged = true;
+			this.invalidateProperties();
+			this.dispatchChangeEvent("disabledDaysChanged");
 		}
 
 		//----------------------------------
@@ -1254,7 +1254,7 @@ module com.deCampredon.spark.components
 		 */
 		public get disabledRanges():any[]
 		{
-			return _disabledRanges;
+			return this._disabledRanges;
 		}
 
 		/**
@@ -1262,11 +1262,11 @@ module com.deCampredon.spark.components
 		 */
 		public set disabledRanges(value:any[])
 		{
-			_disabledRanges = scrubTimeValues(value);
-			disabledRangesChanged = true;
+			this._disabledRanges = this.scrubTimeValues(value);
+			this.disabledRangesChanged = true;
 
-			invalidateProperties();
-			dispatchChangeEvent("disabledRangesChanged");
+			this.invalidateProperties();
+			this.dispatchChangeEvent("disabledRangesChanged");
 		}
 
 		//----------------------------------
@@ -1318,7 +1318,7 @@ module com.deCampredon.spark.components
 		 */
 		public get selectableRange():Object
 		{
-			return _selectableRange;
+			return this._selectableRange;
 		}
 
 		/**
@@ -1326,10 +1326,10 @@ module com.deCampredon.spark.components
 		 */
 		public set selectableRange(value:Object)
 		{
-			_selectableRange = scrubTimeValue(value);
-			selectableRangeChanged = true;
-			dispatchChangeEvent("selectableRangeChanged");
-			invalidateProperties();
+			this._selectableRange = this.scrubTimeValue(value);
+			this.selectableRangeChanged = true;
+			this.dispatchChangeEvent("selectableRangeChanged");
+			this.invalidateProperties();
 		}
 
 
@@ -1355,7 +1355,7 @@ module com.deCampredon.spark.components
 		 */
 		private get gridColumns():IList
 		{
-			return _gridColumns;
+			return this._gridColumns;
 		}
 
 		/**
@@ -1363,9 +1363,9 @@ module com.deCampredon.spark.components
 		 */
 		private set gridColumns(value:IList)
 		{
-			_gridColumns = value;
-			if(bodyGrid)
-				bodyGrid.columns = value;
+			this._gridColumns = value;
+			if(this.bodyGrid)
+				this.bodyGrid.columns = value;
 		}
 
 
@@ -1383,7 +1383,7 @@ module com.deCampredon.spark.components
 		 */
 		private get gridDataProvider():IList
 		{
-			return _gridDataProvider;
+			return this._gridDataProvider;
 		}
 
 		/**
@@ -1391,9 +1391,9 @@ module com.deCampredon.spark.components
 		 */
 		private set gridDataProvider(value:IList)
 		{
-			_gridDataProvider = value;
-			if(bodyGrid)
-				bodyGrid.dataProvider = value
+			this._gridDataProvider = value;
+			if(this.bodyGrid)
+				this.bodyGrid.dataProvider = value
 		}
 
 		//----------------------------------
@@ -1410,7 +1410,7 @@ module com.deCampredon.spark.components
 		 */
 		private get currentMonthText():string
 		{
-			return _currentMonthText;
+			return this._currentMonthText;
 		}
 
 		/**
@@ -1418,9 +1418,9 @@ module com.deCampredon.spark.components
 		 */
 		private set currentMonthText(value:string)
 		{
-			_currentMonthText = value;
-			if(monthLabelDisplay)
-				monthLabelDisplay.text = value;
+			this._currentMonthText = value;
+			if(this.monthLabelDisplay)
+				this.monthLabelDisplay.text = value;
 		}
 
 		//----------------------------------
@@ -1436,7 +1436,7 @@ module com.deCampredon.spark.components
 		 */
 		private get selectedCellPosition():CellPosition
 		{
-			return _selectedCellPosition;
+			return this._selectedCellPosition;
 		}
 
 		/**
@@ -1444,9 +1444,9 @@ module com.deCampredon.spark.components
 		 */
 		private set selectedCellPosition(value:CellPosition)
 		{
-			_selectedCellPosition = value;
-			if(bodyGrid)
-				bodyGrid.selectedCell = value
+			this._selectedCellPosition = value;
+			if(this.bodyGrid)
+				this.bodyGrid.selectedCell = value
 		}
 
 
@@ -1463,17 +1463,17 @@ module com.deCampredon.spark.components
 		 */
 		public getTodayCellPosition():CellPosition {
 			var today:Date = new Date();
-			if(displayedMonth == today.month && displayedYear == today.fullYear) {
+			if(this.displayedMonth == today.month && this.displayedYear == today.fullYear) {
 				var cellPosition:CellPosition = new CellPosition();
-				var date:Date = new Date(displayedYear,displayedMonth,1);
+				var date:Date = new Date(this.displayedYear,this.displayedMonth,1);
 				var currentWeek:number = -1.
-				while(date.month == displayedMonth) {
-					if(date.day == firstDayOfWeek || currentWeek==-1) {
+				while(date.month == this.displayedMonth) {
+					if(date.day == this.firstDayOfWeek || currentWeek==-1) {
 						currentWeek++;
 					}
 					if(date.date == today.date) {
 						cellPosition.rowIndex = currentWeek;
-						cellPosition.columnIndex = (today.day+firstDayOfWeek)%7;
+						cellPosition.columnIndex = (today.day+this.firstDayOfWeek)%7;
 						return cellPosition;
 					}
 					date.date++;
@@ -1487,8 +1487,8 @@ module com.deCampredon.spark.components
 		 */
 		public isEnabledCell(rowIndex:number, columnIndex:number):boolean
 		{
-			var date:Date = getDateForCell(rowIndex,columnIndex);
-			return isEnableddDate(date);
+			var date:Date = this.getDateForCell(rowIndex,columnIndex);
+			return this.isEnableddDate(date);
 		}
 
 
@@ -1499,57 +1499,57 @@ module com.deCampredon.spark.components
 			super.commitProperties();
 			var i:number,weekObject:Object;
 
-			if(maxYearChanged || minYearChanged) {
-				if(displayedYear < minYear)
-					displayedYear = minYear;
-				if(displayedYear > maxYear)
-					displayedYear = maxYear;
-				if(yearNavigator) {
-					yearNavigator.maximum = maxYear;
-					yearNavigator.minimum = minYear;
+			if(this.maxYearChanged || this.minYearChanged) {
+				if(this.displayedYear < this.minYear)
+					this.displayedYear = this.minYear;
+				if(this.displayedYear > this.maxYear)
+					this.displayedYear = this.maxYear;
+				if(this.yearNavigator) {
+					this.yearNavigator.maximum = this.maxYear;
+					this.yearNavigator.minimum = this.minYear;
 				}
 			}
-			if(showTodayChanged || disabledDaysChanged || selectableRangeChanged) {
-				if(bodyGrid && bodyGrid.grid)
-					bodyGrid.grid.invalidateDisplayList();
+			if(this.showTodayChanged || this.disabledDaysChanged || this.selectableRangeChanged) {
+				if(this.bodyGrid && this.bodyGrid.grid)
+					this.bodyGrid.grid.invalidateDisplayList();
 			}
-			if(selectedDateChanged) {
-				commitVisualSelection(true);
+			if(this.selectedDateChanged) {
+				this.commitVisualSelection(true);
 			}
-			if(firstDayOfWeekChanged || displayedMonthChanged || displayedYearChanged || disabledRangesChanged) {
-				updateGridDataProvider();
-				if(!selectedDateChanged) {
-					commitVisualSelection(false);
+			if(this.firstDayOfWeekChanged || this.displayedMonthChanged || this.displayedYearChanged || this.disabledRangesChanged) {
+				this.updateGridDataProvider();
+				if(!this.selectedDateChanged) {
+					this.commitVisualSelection(false);
 				}
 				else {
-					if(bodyGrid) {
-						bodyGrid.selectedCell = selectedCellPosition
+					if(this.bodyGrid) {
+						this.bodyGrid.selectedCell = this.selectedCellPosition
 					}
 				}
 			}
-			if(firstDayOfWeekChanged || dayNamesChanged) {
-				updateGridColumn();
+			if(this.firstDayOfWeekChanged || this.dayNamesChanged) {
+				this.updateGridColumn();
 			}
-			if(displayedMonthChanged || monthNamesChanged || monthSymbolChanged) {
-				updateMonthText();
+			if(this.displayedMonthChanged || this.monthNamesChanged || this.monthSymbolChanged) {
+				this.updateMonthText();
 			}
-			if(displayedYearChanged && yearNavigator) {
-				yearNavigator.value = displayedYear
+			if(this.displayedYearChanged && this.yearNavigator) {
+				this.yearNavigator.value = this.displayedYear
 			}
 
-			monthNamesChanged = false;
-			monthSymbolChanged = false;
-			selectedDateChanged = false;
-			displayedMonthChanged = false;	
-			displayedYearChanged = false;
-			firstDayOfWeekChanged = false;
-			dayNamesChanged = false;
-			maxYearChanged = false;
-			minYearChanged = false;
-			disabledDaysChanged = false;
-			showTodayChanged = false;
-			disabledRangesChanged = false;
-			selectableRangeChanged = false;
+			this.monthNamesChanged = false;
+			this.monthSymbolChanged = false;
+			this.selectedDateChanged = false;
+			this.displayedMonthChanged = false;	
+			this.displayedYearChanged = false;
+			this.firstDayOfWeekChanged = false;
+			this.dayNamesChanged = false;
+			this.maxYearChanged = false;
+			this.minYearChanged = false;
+			this.disabledDaysChanged = false;
+			this.showTodayChanged = false;
+			this.disabledRangesChanged = false;
+			this.selectableRangeChanged = false;
 		}
 
 
@@ -1560,11 +1560,11 @@ module com.deCampredon.spark.components
 		{
 			super.resourcesChanged();
 
-			dayNames = dayNamesOverride;
-			firstDayOfWeek = firstDayOfWeekOverride;
-			monthNames = monthNamesOverride;
-			monthSymbol = monthSymbolOverride;
-			yearSymbol = yearSymbolOverride;
+			this.dayNames = this.dayNamesOverride;
+			this.firstDayOfWeek = this.firstDayOfWeekOverride;
+			this.monthNames = this.monthNamesOverride;
+			this.monthSymbol = this.monthSymbolOverride;
+			this.yearSymbol = this.yearSymbolOverride;
 		}
 
 
@@ -1572,10 +1572,10 @@ module com.deCampredon.spark.components
 		 * @private
 		 */
 		/*override*/ /*protected*/ getCurrentSkinState():string {
-			if(yearNavigationEnabled) {
-				return enabled?"normalWithYearNavigation":"disabledWithYearNavigation";
+			if(this.yearNavigationEnabled) {
+				return this.enabled?"normalWithYearNavigation":"disabledWithYearNavigation";
 			}
-			return enabled?"normal":"disabled";
+			return this.enabled?"normal":"disabled";
 		}
 
 		/**
@@ -1583,31 +1583,31 @@ module com.deCampredon.spark.components
 		 */
 		/*override*/ /*protected*/ partAdded(partName:string, instance:Object):void {
 			super.partAdded(partName,instance);
-			if(instance == bodyGrid) {
-				bodyGrid.dateChooser = this;
-				bodyGrid.columns = gridColumns;
-				bodyGrid.dataProvider = gridDataProvider;
-				bodyGrid.selectedCell = selectedCellPosition;
-				bodyGrid.selectionMode = GridSelectionMode.SINGLE_CELL
-				bodyGrid.addEventListener(GridSelectionEvent.SELECTION_CHANGING,bodyGrid_selectionChangingHandler);
-				bodyGrid.addEventListener(GridSelectionEvent.SELECTION_CHANGE,bodyGrid_selectionChangeHandler);
-				bodyGrid.addEventListener(GridEvent.GRID_ROLL_OVER,bodyGrid_gridRollOverHandler);
+			if(instance == this.bodyGrid) {
+				this.bodyGrid.dateChooser = this;
+				this.bodyGrid.columns = this.gridColumns;
+				this.bodyGrid.dataProvider = this.gridDataProvider;
+				this.bodyGrid.selectedCell = this.selectedCellPosition;
+				this.bodyGrid.selectionMode = GridSelectionMode.SINGLE_CELL
+				this.bodyGrid.addEventListener(GridSelectionEvent.SELECTION_CHANGING,this.bodyGrid_selectionChangingHandler);
+				this.bodyGrid.addEventListener(GridSelectionEvent.SELECTION_CHANGE,this.bodyGrid_selectionChangeHandler);
+				this.bodyGrid.addEventListener(GridEvent.GRID_ROLL_OVER,this.bodyGrid_gridRollOverHandler);
 			}
-			else if(instance == monthLabelDisplay) {
-				monthLabelDisplay.text = currentMonthText;
+			else if(instance == this.monthLabelDisplay) {
+				this.monthLabelDisplay.text = this.currentMonthText;
 			}
-			else if(instance == nextMonthButton) {
-				nextMonthButton.addEventListener(MouseEvent.CLICK,nextMonthButton_clickHandler);
+			else if(instance == this.nextMonthButton) {
+				this.nextMonthButton.addEventListener(MouseEvent.CLICK,this.nextMonthButton_clickHandler);
 			}
-			else if(instance == prevMonthButton) {
-				prevMonthButton.addEventListener(MouseEvent.CLICK,prevMonthButton_clickHandler);
+			else if(instance == this.prevMonthButton) {
+				this.prevMonthButton.addEventListener(MouseEvent.CLICK,this.prevMonthButton_clickHandler);
 			}
-			else if(instance == yearNavigator) {
-				yearNavigator.maximum = maxYear;
-				yearNavigator.minimum = minYear;
-				yearNavigator.value = displayedYear;
-				yearNavigator.yearSymbol = yearSymbol;
-				yearNavigator.addEventListener(Event.CHANGE,yearNavigator_changeHandler);
+			else if(instance == this.yearNavigator) {
+				this.yearNavigator.maximum = this.maxYear;
+				this.yearNavigator.minimum = this.minYear;
+				this.yearNavigator.value = this.displayedYear;
+				this.yearNavigator.yearSymbol = this.yearSymbol;
+				this.yearNavigator.addEventListener(Event.CHANGE,this.yearNavigator_changeHandler);
 			}
 		}
 
@@ -1618,19 +1618,19 @@ module com.deCampredon.spark.components
 		 */
 		/*override*/ /*protected*/ partRemoved(partName:string, instance:Object):void {
 			super.partRemoved(partName,instance);
-			if(instance == bodyGrid) {
-				bodyGrid.removeEventListener(GridSelectionEvent.SELECTION_CHANGING,bodyGrid_selectionChangingHandler);
-				bodyGrid.removeEventListener(GridSelectionEvent.SELECTION_CHANGE,bodyGrid_selectionChangeHandler);
-				bodyGrid.removeEventListener(GridEvent.GRID_ROLL_OVER,bodyGrid_gridRollOverHandler);
+			if(instance == this.bodyGrid) {
+				this.bodyGrid.removeEventListener(GridSelectionEvent.SELECTION_CHANGING,this.bodyGrid_selectionChangingHandler);
+				this.bodyGrid.removeEventListener(GridSelectionEvent.SELECTION_CHANGE,this.bodyGrid_selectionChangeHandler);
+				this.bodyGrid.removeEventListener(GridEvent.GRID_ROLL_OVER,this.bodyGrid_gridRollOverHandler);
 			}
-			else if(instance == nextMonthButton) {
-				nextMonthButton.removeEventListener(MouseEvent.CLICK,nextMonthButton_clickHandler);
+			else if(instance == this.nextMonthButton) {
+				this.nextMonthButton.removeEventListener(MouseEvent.CLICK,this.nextMonthButton_clickHandler);
 			}
-			else if(instance == prevMonthButton) {
-				prevMonthButton.removeEventListener(MouseEvent.CLICK,prevMonthButton_clickHandler);
+			else if(instance == this.prevMonthButton) {
+				this.prevMonthButton.removeEventListener(MouseEvent.CLICK,this.prevMonthButton_clickHandler);
 			}
-			else if(instance == yearNavigator) {
-				yearNavigator.removeEventListener(Event.CHANGE,yearNavigator_changeHandler);
+			else if(instance == this.yearNavigator) {
+				this.yearNavigator.removeEventListener(Event.CHANGE,this.yearNavigator_changeHandler);
 			}
 		}
 
@@ -1650,7 +1650,7 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ bodyGrid_selectionChangingHandler(event:GridSelectionEvent):void
 		{
-			if(!isEnabledCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex)){
+			if(!this.isEnabledCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex)){
 				event.preventDefault();
 			}
 		}		
@@ -1661,9 +1661,9 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ bodyGrid_selectionChangeHandler(event:GridSelectionEvent):void
 		{
-			var date:Date = getDateForCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex);
+			var date:Date = this.getDateForCell(event.selectionChange.rowIndex,event.selectionChange.columnIndex);
 			date = new Date(date.time);
-			setSelectedDate(date)
+			this.setSelectedDate(date)
 		}		
 
 
@@ -1675,9 +1675,9 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ bodyGrid_gridRollOverHandler(event:GridEvent):void
 		{
-			if(!isEnabledCell(event.rowIndex,event.columnIndex) && bodyGrid && bodyGrid.grid) {
-				bodyGrid.grid.hoverRowIndex = -1;
-				bodyGrid.grid.hoverColumnIndex = -1;
+			if(!this.isEnabledCell(event.rowIndex,event.columnIndex) && this.bodyGrid && this.bodyGrid.grid) {
+				this.bodyGrid.grid.hoverRowIndex = -1;
+				this.bodyGrid.grid.hoverColumnIndex = -1;
 			}
 		}
 
@@ -1687,7 +1687,7 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ prevMonthButton_clickHandler(event:MouseEvent):void
 		{
-			decreaseDisplayedMonth();
+			this.decreaseDisplayedMonth();
 		}
 
 
@@ -1697,7 +1697,7 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ nextMonthButton_clickHandler(event:MouseEvent):void
 		{
-			increaseDisplayedMonth();
+			this.increaseDisplayedMonth();
 		}		
 
 
@@ -1707,9 +1707,9 @@ module com.deCampredon.spark.components
 		 */
 		/*protected*/ yearNavigator_changeHandler(event:Event):void
 		{
-			var increased:boolean = displayedYear < yearNavigator.value;
-			displayedYear = yearNavigator.value;
-			dispatchScrollingEvent(increased?DateChooserEventDetail.NEXT_YEAR:DateChooserEventDetail.PREVIOUS_YEAR);
+			var increased:boolean = this.displayedYear < this.yearNavigator.value;
+			this.displayedYear = this.yearNavigator.value;
+			this.dispatchScrollingEvent(increased?DateChooserEventDetail.NEXT_YEAR:DateChooserEventDetail.PREVIOUS_YEAR);
 		}	
 
 		//--------------------------------------------------------------------------
@@ -1726,18 +1726,18 @@ module com.deCampredon.spark.components
 		{
 			//dispatch a selectionChanging event to allow the user to prevent/modify the selection
 			var selectionEvent:DateChooserSelectionEvent = 
-				new DateChooserSelectionEvent(DateChooserSelectionEvent.SELECTION_CHANGING,false,true,selectedDate,date);
+				new DateChooserSelectionEvent(DateChooserSelectionEvent.SELECTION_CHANGING,false,true,this.selectedDate,date);
 
-			dispatchEvent(selectionEvent);
+			this.dispatchEvent(selectionEvent);
 			//if the event have not been default prevented commit the selection
 			if(!selectionEvent.isDefaultPrevented()) {
-				selectedDate = selectionEvent.newDate;
-				dispatchEvent(new FlexEvent(FlexEvent.VALUE_COMMIT));
+				this.selectedDate = selectionEvent.newDate;
+				this.dispatchEvent(new FlexEvent(FlexEvent.VALUE_COMMIT));
 			}
 
 			//if event have been selected, or date have been modified commit the visual selection
 			if(selectionEvent.isDefaultPrevented() || selectionEvent.newDate != date)
-				commitVisualSelection(true);
+				this.commitVisualSelection(true);
 		}
 
 		/**
@@ -1746,16 +1746,16 @@ module com.deCampredon.spark.components
 		 */
 		private increaseDisplayedMonth():void
 		{
-			if(displayedMonth == 11) {
-				if(displayedYear >= maxYear)
+			if(this.displayedMonth == 11) {
+				if(this.displayedYear >= this.maxYear)
 					return;
-				displayedYear++;
-				displayedMonth = 0;
+				this.displayedYear++;
+				this.displayedMonth = 0;
 			} 
 			else { 
-				displayedMonth++;
+				this.displayedMonth++;
 			}
-			dispatchScrollingEvent(DateChooserScrollEventDetail.NEXT_MONTH);
+			this.dispatchScrollingEvent(DateChooserScrollEventDetail.NEXT_MONTH);
 		}		
 
 		/**
@@ -1764,22 +1764,22 @@ module com.deCampredon.spark.components
 		 */
 		private decreaseDisplayedMonth():void
 		{
-			if(displayedMonth ==0) {
-				if(displayedYear <= minYear)
+			if(this.displayedMonth ==0) {
+				if(this.displayedYear <= this.minYear)
 					return;
-				displayedYear--;
-				displayedMonth = 11;
+				this.displayedYear--;
+				this.displayedMonth = 11;
 			}
 			else {
-				displayedMonth--;
+				this.displayedMonth--;
 			}
-			dispatchScrollingEvent(DateChooserScrollEventDetail.PREVIOUS_MONTH);
+			this.dispatchScrollingEvent(DateChooserScrollEventDetail.PREVIOUS_MONTH);
 		}
 
 
 		private dispatchScrollingEvent(detail:string):void
 		{
-			dispatchEvent(new DateChooserScrollEvent(DateChooserScrollEvent.SCROLL,false,false,detail));
+			this.dispatchEvent(new DateChooserScrollEvent(DateChooserScrollEvent.SCROLL,false,false,detail));
 		}
 
 		/**
@@ -1790,15 +1790,15 @@ module com.deCampredon.spark.components
 		{
 			var days:number[] = new Array<number>();
 			var gridColumnsArray:any[] = []
-			for(var i:int =0;i<7;i++) {
-				var day:number = (i+firstDayOfWeek)%7;
+			for(var i:number =0;i<7;i++) {
+				var day:number = (i+this.firstDayOfWeek)%7;
 				var collumn:GridColumn = new GridColumn();
-				collumn.dataField = dayProps[day];
-				collumn.headerText = dayNames[day];
-				collumn.labelFunction = gridLabelFunction;
+				collumn.dataField = DateChooser.dayProps[day];
+				collumn.headerText = this.dayNames[day];
+				collumn.labelFunction = this.gridLabelFunction;
 				gridColumnsArray.push(collumn);
 			}
-			gridColumns = new ArrayList(gridColumnsArray);
+			this.gridColumns = new ArrayList(gridColumnsArray);
 		}
 
 		/**
@@ -1807,24 +1807,24 @@ module com.deCampredon.spark.components
 		 */
 		private updateGridDataProvider():void
 		{
-			var date:Date = new Date(displayedYear,displayedMonth,1);
+			var date:Date = new Date(this.displayedYear,this.displayedMonth,1);
 			var weekObjects:any[] = new Array(6);
 			var currentObject:Object;
-			for (var i:int = 0; i < weekObjects.length; i++) 
+			for (var i:number = 0; i < weekObjects.length; i++) 
 			{
 				weekObjects[i] = currentObject = new Object();
 			}
 			var currentWeek:number = -1;
 
-			while(date.month == displayedMonth) {
-				if(date.day == firstDayOfWeek || currentWeek==-1) {
+			while(date.month == this.displayedMonth) {
+				if(date.day == this.firstDayOfWeek || currentWeek==-1) {
 					currentWeek++;
 					currentObject =  weekObjects[currentWeek];
 				}
-				currentObject[dayProps[date.day]] = new Date(date.time);
+				currentObject[DateChooser.dayProps[date.day]] = new Date(date.time);
 				date.date++;
 			}
-			gridDataProvider = new ArrayList(weekObjects);
+			this.gridDataProvider = new ArrayList(weekObjects);
 		}
 
 		/**
@@ -1833,7 +1833,7 @@ module com.deCampredon.spark.components
 		 */
 		private updateMonthText():void
 		{
-			currentMonthText = monthNames[displayedMonth]+monthSymbol;
+			this.currentMonthText = this.monthNames[this.displayedMonth]+this.monthSymbol;
 		}
 
 
@@ -1846,35 +1846,35 @@ module com.deCampredon.spark.components
 		 */
 		private commitVisualSelection(overrideMonthAndYear:boolean):void
 		{
-			if(selectedDate ) {
-				if(displayedMonth != selectedDate.month || displayedYear != selectedDate.fullYear) {
+			if(this.selectedDate ) {
+				if(this.displayedMonth != this.selectedDate.month || this.displayedYear != this.selectedDate.fullYear) {
 					if(overrideMonthAndYear) {
-						displayedMonth = selectedDate.month;
-						displayedYear = selectedDate.fullYear;
+						this.displayedMonth = this.selectedDate.month;
+						this.displayedYear = this.selectedDate.fullYear;
 					}
 					else  {
-						selectedCellPosition = null;
+						this.selectedCellPosition = null;
 						return;
 					}
 				}
-				var date:Date = new Date(displayedYear,displayedMonth,1);
+				var date:Date = new Date(this.displayedYear,this.displayedMonth,1);
 				var currentWeek:number = -1.
-				while(date.month == displayedMonth) {
-					if(date.day == firstDayOfWeek || currentWeek==-1) {
+				while(date.month == this.displayedMonth) {
+					if(date.day == this.firstDayOfWeek || currentWeek==-1) {
 						currentWeek++;
 					}
-					if(date.date == selectedDate.date) {
+					if(date.date == this.selectedDate.date) {
 						var cellPosition:CellPosition = new CellPosition();
 						cellPosition.rowIndex = currentWeek;
-						cellPosition.columnIndex = (date.day+firstDayOfWeek)%7;
-						selectedCellPosition = cellPosition;
+						cellPosition.columnIndex = (date.day+this.firstDayOfWeek)%7;
+						this.selectedCellPosition = cellPosition;
 						return;
 					}
 					date.date++;
 				}
 			}
 			else {
-				selectedCellPosition = null;
+				this.selectedCellPosition = null;
 			}
 		}
 
@@ -1929,9 +1929,9 @@ module com.deCampredon.spark.components
 		 * get the date corresponding to a grid cell rowIndex and columnIndex
 		 */
 		private getDateForCell(rowIndex:number,columnIndex:number):Date {
-			if(gridDataProvider && gridColumns && rowIndex >=0 && rowIndex <7 && columnIndex >=0 && columnIndex < 7) {
-				var week:Object = gridDataProvider.getItemAt(rowIndex);
-				var column:GridColumn = <GridColumn>gridColumns.getItemAt(columnIndex) ;
+			if(this.gridDataProvider && this.gridColumns && rowIndex >=0 && rowIndex <7 && columnIndex >=0 && columnIndex < 7) {
+				var week:Object = this.gridDataProvider.getItemAt(rowIndex);
+				var column:GridColumn = <GridColumn>this.gridColumns.getItemAt(columnIndex) ;
 				return week[column.dataField];
 			}
 			return null;
@@ -1946,27 +1946,29 @@ module com.deCampredon.spark.components
 		private isEnableddDate(date:Date):boolean {
 			if(!date)
 				return false;
-			if(disabledDays && disabledDays.indexOf(date.day)!=-1)
+			if(this.disabledDays && this.disabledDays.indexOf(date.day)!=-1)
 				return false;
-			if(disabledRanges) {
-				/*for each(var range:* in disabledRanges) {
-					if(range is Date && date.time == range.time) {
+			if(this.disabledRanges) {
+				for (var i in this.disabledRanges) {
+                    var range:any  = this.disabledRanges[i];
+					if(range instanceof Date && date.time == range.time) {
 						return false;
 					}
-					else if(range is Object && dateInRange(date,range)) {
+					else if(range instanceof Object && this.dateInRange(date,range)) {
 						return false;
 					}
-				}*/
-                /*for each(range in disabledRanges) {
-					if(range is Date && date.time == range.time) {
+				}
+                for(i in this.disabledRanges) {
+                    var range:any  = this.disabledRanges[i];
+					if(range instanceof Date && date.time == range.time) {
 						return false;
 					}
-					else if(range is Object && dateInRange(date,range)) {
+					else if(range instanceof Object && this.dateInRange(date,range)) {
 						return false;
 					}
-				}*/
+				}
 			}
-			if(selectableRange && !dateInRange(date,selectableRange)) {
+			if(this.selectableRange && !this.dateInRange(date,this.selectableRange)) {
 				return false;
 			}
 			return true;
@@ -1977,8 +1979,8 @@ module com.deCampredon.spark.components
 		 */
 		private dispatchChangeEvent(event:string):void
 		{
-			if(hasEventListener(event))
-				dispatchEvent(new Event(event));
+			if(this.hasEventListener(event))
+				this.dispatchEvent(new Event(event));
 		}
 
 		/**
@@ -2019,9 +2021,9 @@ module com.deCampredon.spark.components
 		private scrubTimeValues(values:any[]):any[]
 		{
 			var dates:any[] = [];
-			for (var i:int = 0; i < values.length; i++)
+			for (var i:number = 0; i < values.length; i++)
 			{
-				dates[i] = scrubTimeValue(values[i]);
+				dates[i] = this.scrubTimeValue(values[i]);
 			}
 			return dates;
 		}
