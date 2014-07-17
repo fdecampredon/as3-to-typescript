@@ -52,8 +52,7 @@ var KeyWords = {
     TRUE: 'true',
     FALSE: 'false',
     NULL: 'null',
-    UNDEFINED: 'undefined',
-    NaN: 'NaN'
+    THIS: 'this'
     
 };
 

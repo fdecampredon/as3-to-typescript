@@ -26,7 +26,7 @@ var keywordsCheck: { [index: string]: boolean }
     );
 
 function isKeyWord(text: string): boolean {
-    return !keywordsCheck[text];
+    return !!keywordsCheck[text];
 }
 
 
@@ -61,6 +61,14 @@ interface Scope {
     declarations: Declaration[];
     isTopLevel: boolean;
 }
+var globVars = [
+    'undefined', 'NaN', 'Infinity',
+    'Array',  'Boolean',  'decodeURI',  'decodeURIComponent',  'encodeURI',  'encodeURIComponent',  'escape',  
+    'int',  'isFinite',  'isNaN',  'isXMLName',  'Number',  'Object',  
+    'parseFloat', 'parseInt',  'String',  'trace',  'uint',  'unescape',  'Vector',  'XML',  'XMLList',
+    'ArgumentError',  'arguments',  'Class',  'Date',  'DefinitionError',  'Error',  'EvalError',  'Function',  'Math',  'Namespace',           'QName',  'RangeError',  'ReferenceError',  'RegExp',  'SecurityError',  'SyntaxError',  'TypeError',  'URIError',  'VerifyError'
+];
+
 
 interface Declaration { 
     bound?: string; 
@@ -120,6 +128,7 @@ visitors[NodeKind.META] = emitMeta;
 visitors[NodeKind.IMPORT] = emitImport;
 visitors[NodeKind.INCLUDE] = visitors[NodeKind.USE] = emitInclude;
 visitors[NodeKind.FUNCTION] = emitFunction;
+visitors[NodeKind.LAMBDA] = emitFunction;
 visitors[NodeKind.INTERFACE] = emitInterface;
 visitors[NodeKind.CLASS] = emitClass;
 visitors[NodeKind.VECTOR] = emitVector;
@@ -129,7 +138,7 @@ visitors[NodeKind.NEW] = emitNew;
 visitors[NodeKind.RELATION] = emitRelation;
 visitors[NodeKind.OP] = emitOp;
 visitors[NodeKind.FOREACH] = emitForeach;
-visitors[NodeKind.LITERAL] = emitLiteral;
+visitors[NodeKind.IDENTIFIER] = emitIdent;
 
 
 function visitNode(node: Node) {
@@ -274,7 +283,9 @@ function emitSet(node: Node) {
     if (type) {
         skipTo(type.end);
     }
+    enterFunctionScope(node);
     visitNodes(node.getChildFrom(NodeKind.TYPE));
+    exitScope();
 }
 
 function emitMethod(node: Node) {
@@ -293,6 +304,7 @@ function emitMethod(node: Node) {
     }
     enterFunctionScope(node);
     visitNodes(node.getChildFrom(NodeKind.NAME));
+    exitScope();
 }
 
 function emitPropertyDecl(node: Node, isConst = false) {
@@ -425,7 +437,7 @@ function emitRelation(node: Node) {
     catchup(node.start);
     var as = node.findChild(NodeKind.AS);
     if (as) {
-        if (node.lastChild.kind === NodeKind.LITERAL) {
+        if (node.lastChild.kind === NodeKind.IDENTIFIER) {
             insert('<');
             insert(node.lastChild.text);
             insert('>');
@@ -475,23 +487,24 @@ function emitForeach(node: Node) {
     catchup(node.end);*/
 }
 
-function emitLiteral(node: Node) {
+function emitIdent(node: Node) {
     catchup(node.start);
-    if (!isKeyWord(node.text)) {
-        visitNodes(node.children);
-        return;
-    }
     if (node.parent && node.parent.kind === NodeKind.DOT) {
         //in case of dot just check the first
         if(node.parent.children[0] !== node) {
             return;
         }
     }
+    
+    if (isKeyWord(node.text)) {
+        return;
+    }
+    
     var def = findDefInScope(node.text);
     if (def && def.bound) {
         insert(def.bound + '.');
     }
-    if (!def) {
+    if (!def && state.currentClassName && globVars.indexOf(node.text) === -1) {
         insert('this.');
     }
 }
@@ -533,27 +546,37 @@ function enterClassScope(contentsNode: Node[]) {
 }
 
 function enterFunctionScope(node: Node) {
+    var decls: Declaration[]  = [];
+    var params = node.findChild(NodeKind.PARAMETER_LIST);
+    if (params && params.children.length) {
+        decls = params.children.map(param => {
+           return {
+                name: param.findChild(NodeKind.NAME_TYPE_INIT) 
+                    .findChild(NodeKind.NAME).text
+           }
+        });
+    }
     var block = node.findChild(NodeKind.BLOCK);
-    if (!block) {
-        enterScope([]);
-        return;
-    }
-    function traverse(node: Node): Declaration[] {
-        var result = new Array<Declaration>();
-        if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST ||
-            node.kind === NodeKind.VAR || node.kind === NodeKind.CONST) {
-            result = result.concat(
-                node
-                    .findChildren(NodeKind.NAME_TYPE_INIT)
-                    .map(node => ({ name: node.findChild(NodeKind.NAME).text }))
-            );
-        } 
-        if (node.kind !== NodeKind.FUNCTION && node.children && node.children.length) {
-            result = Array.prototype.concat.apply(result, node.children.map(traverse));
+    if (block) {
+        function traverse(node: Node): Declaration[] {
+            var result = new Array<Declaration>();
+            if (node.kind === NodeKind.VAR_LIST || node.kind === NodeKind.CONST_LIST ||
+                node.kind === NodeKind.VAR || node.kind === NodeKind.CONST) {
+                result = result.concat(
+                    node
+                        .findChildren(NodeKind.NAME_TYPE_INIT)
+                        .map(node => ({ name: node.findChild(NodeKind.NAME).text }))
+                );
+            } 
+            if (node.kind !== NodeKind.FUNCTION && node.children && node.children.length) {
+                result = Array.prototype.concat.apply(result, node.children.map(traverse));
+            }
+            return result.filter(decl => !!decl);
         }
-        return result.filter(decl => !!decl);
+        decls = decls.concat(traverse(block));
     }
-    enterScope(traverse(block));
+    
+    enterScope(decls);
 }
 
 function enterScope(decls: Declaration[]) {

@@ -387,7 +387,7 @@ class AS3Parser {
         }
         else {
             var result:Node;
-            if (this.tok.isNumeric || !/('|")/.test(this.tok.text[0])) {
+            if (this.tok.isNumeric || /('|")/.test(this.tok.text[0])) {
                 result = new Node(NodeKind.LITERAL, this.tok.index, this.tok.end, this.tok.text);
             } else {
                 result = new Node(NodeKind.IDENTIFIER,  this.tok.index, this.tok.end, this.tok.text);
