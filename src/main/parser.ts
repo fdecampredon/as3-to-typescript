@@ -1827,9 +1827,6 @@ class AS3Parser {
     private parseUnaryPostfixExpression(): Node {
         var node: Node = this.parseAccessExpresion();
 
-        if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
-            node = this.parseFunctionCall(node);
-        }
         if (this.tokIs(Operators.INCREMENT)) {
             node = this.parseIncrement(node);
         }
@@ -1843,6 +1840,9 @@ class AS3Parser {
         var node: Node = this.parsePrimaryExpression();
 
         while (true) {
+            if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
+                node = this.parseFunctionCall(node);
+            }
             if (this.tokIs(Operators.DOT) || this.tokIs(Operators.DOUBLE_COLUMN)) {
                 node = this.parseDot(node);
             } else if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
