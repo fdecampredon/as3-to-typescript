@@ -66,13 +66,9 @@ export function run() {
         console.log('compiling \'' + file + '\' ' + number + '/' + length);
         var content = fs.readFileSync(path.resolve(sourceDir, file), 'UTF-8');
         console.log('parsing');
-        try {
-            var ast = parser.buildAst(path.basename(file), content);
-        } catch(e) {
-            console.warn('could nor parse: ' + file + ', skipping');
-        }
+        var ast = parser.buildAst(path.basename(file), content);
         console.log('emitting');
-        (<any>fs).createFileSync(path.resolve(outputDir, file.replace(/.as$/, '.ts')),ast? content : emitter.emit(ast, content));
+        (<any>fs).createFileSync(path.resolve(outputDir, file.replace(/.as$/, '.ts')), emitter.emit(ast, content));
         number ++;
     });
 }
