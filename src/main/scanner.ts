@@ -153,6 +153,19 @@ class AS3Scanner {
         var token = this.scanWord(currentCharacter);
         return token.text.length === 0? this.nextToken() : token;
     }
+    
+    public scanRegExp(): Token {
+        var currentIndex = this.index;
+        var token: Token = this.scanUntilDelimiter('/');
+        if (token != null  && this.isValidRegExp(token.text)) {
+            return token;
+        } else {
+            this.index = currentIndex;
+        }
+        return null;
+    }
+    
+   
 
     private computePossibleMatchesMaxLength(possibleMatches: string[]): number {
         return possibleMatches.reduce((max: number, possibleMatch: string) => {
@@ -182,13 +195,10 @@ class AS3Scanner {
 
     private isValidRegExp(pattern: string): boolean {
         try {
-           new RegExp(pattern);
+           return eval(pattern) instanceof RegExp;
         } catch (e) {
-           if (e instanceof SyntaxError ) {
-              return false;
-           }
+          return false;
         }
-        return true;
     }
 
 
@@ -258,7 +268,7 @@ class AS3Scanner {
      * @param currentCharacter
      * @return
      */
-    private scanCommentRegExpOrOperator(): Token {
+    private scanCommentRegExpOrOperator (): Token {
         var firstCharacter: string = this.peekChar(1);
 
         if (firstCharacter == '/') {
@@ -269,15 +279,8 @@ class AS3Scanner {
         }
 
         var result: Token;
+        
 
-        if (this.getPreviousCharacter() == '='
-            || this.getPreviousCharacter() == '(' || this.getPreviousCharacter() == ',') {
-            result = this.scanRegExp();
-
-            if (result != null) {
-                return result;
-            }
-        }
 
         if (firstCharacter == '=') {
             result = new Token('/=', this.index);
@@ -287,6 +290,9 @@ class AS3Scanner {
         result = new Token('/', this.index);
         return result;
     }
+    
+   
+    
 
     /**
      * c is either a dot or a number
@@ -325,6 +331,8 @@ class AS3Scanner {
         this.skipChars(result.text.length - 1);
         return result;
     }
+    
+
 
     /**
      * The first dot has been scanned Are the next chars dots as well?
@@ -427,14 +435,7 @@ class AS3Scanner {
         return this.scanDecimal(characterToBeScanned);
     }
 
-    private scanRegExp(): Token {
-        var token: Token = this.scanUntilDelimiter('/');
-        if (token != null
-            && this.isValidRegExp(token.text)) {
-            return token;
-        }
-        return null;
-    }
+    
 
     private scanSingleCharacterToken(character: string): Token {
         return new Token(character, this.index);
@@ -489,7 +490,7 @@ class AS3Scanner {
                 return null;
             }
             buffer += currentCharacter;
-            if ((currentCharacter === delimiter  && numberOfBackslashes == 0)) {
+            if ((currentCharacter === delimiter  && numberOfBackslashes == 0) ) {
                 var result = new Token(buffer, this.index);
                 this.skipChars(buffer.toString().length - 1);
                 return result;

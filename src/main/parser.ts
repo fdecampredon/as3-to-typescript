@@ -387,6 +387,14 @@ class AS3Parser {
         }
         else {
             var result:Node;
+            if (this.tok.text === '/' || this.tok.text === '/=') {
+                var tok = this.scn.scanRegExp();
+                if (tok) {
+                    this.nextToken(true);
+                    return new Node(NodeKind.LITERAL, tok.index, tok.end, tok.text)
+                }
+            }
+            
             if (this.tok.isXML) {
                 result = new Node(NodeKind.XML_LITERAL, this.tok.index, this.tok.end, this.tok.text);
             }
@@ -953,11 +961,10 @@ class AS3Parser {
         if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
             var index = this.tok.index
             this.nextToken();
-            var result: Node = new Node(NodeKind.E4X_FILTER, tok.index, -1);
+            var result: Node = new Node(NodeKind.E4X_FILTER, this.tok.index, -1);
             result.children.push(node);
             result.children.push(this.parseExpression());
-            var tok = this.consume(Operators.RIGHT_PARENTHESIS);
-            result.end = tok.end;
+            result.end = this.consume(Operators.RIGHT_PARENTHESIS).end;
             return result;
         }
         else if (this.tokIs(Operators.TIMES)) {
