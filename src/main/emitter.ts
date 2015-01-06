@@ -531,10 +531,12 @@ function enterFunctionScope(node: Node) {
     var params = node.findChild(NodeKind.PARAMETER_LIST);
     if (params && params.children.length) {
         decls = params.children.map(param => {
-           return {
-                name: param.findChild(NodeKind.NAME_TYPE_INIT) 
-                    .findChild(NodeKind.NAME).text
-           }
+            var nameTypeInit  = param.findChild(NodeKind.NAME_TYPE_INIT);
+            if (nameTypeInit) {
+                return {name: nameTypeInit.findChild(NodeKind.NAME).text}
+            } 
+            var rest = param.findChild(NodeKind.REST)
+            return { name: rest.text };
         });
     }
     var block = node.findChild(NodeKind.BLOCK);
