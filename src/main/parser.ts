@@ -1702,7 +1702,7 @@ class AS3Parser {
                 var index = this.tok.index;
                 this.nextToken(true); // case
                 var expr = this.parseExpression();
-                var caseNode: Node = new Node(NodeKind.CASE, index, expr.end, null, [this.parseExpression()]);
+                var caseNode: Node = new Node(NodeKind.CASE, index, expr.end, null, [expr]);
                 this.consume(Operators.COLUMN);
                 var block = this.parseSwitchBlock();
                 caseNode.children.push(block);
