@@ -152,7 +152,8 @@ class AS3Scanner {
             return this.scanCharacterSequence(currentCharacter, ['!==', '!=']);
         }
 
-        return this.scanWord(currentCharacter);
+        var token = this.scanWord(currentCharacter);
+        return token.text.length === 0? this.nextToken() : token;
     }
 
     private computePossibleMatchesMaxLength(possibleMatches: string[]): number {
@@ -210,7 +211,7 @@ class AS3Scanner {
         do {
             result = this.nextChar();
         }
-        while (result == ' ' || result == '\t');
+        while (result == ' ' || result == '\t' || result.charCodeAt(0) == 13);
         return result;
     }
 
