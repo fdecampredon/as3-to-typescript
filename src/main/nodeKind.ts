@@ -97,6 +97,7 @@ var NodeKind = {
     VOID: "void",
     WHILE: "while",
     
+    XML_LITERAL: "xml_literal",
     LITERAL: "literal",
     IDENTIFIER: "identifier"
 }

@@ -48,15 +48,13 @@ function endsWith(string: string, suffix: string) {
 
 
 function verifyXML(string: string) {
-    var parser = sax.parser(true),
-        result = true;
-    
-    parser.onerror = function (e:any) {
-        result = false;
-    };
-
-    parser.write(string).close();
-    return result;
+    var parser = sax.parser(true);
+    try {
+        parser.write(string).close();
+        return true;
+    } catch (e) {
+        return false;
+    }
 }
 
 /**
@@ -487,18 +485,18 @@ class AS3Scanner {
 
         for (; ;) {
             var currentCharacter: string = this.peekChar(peekPos++);
-            if (currentCharacter === '\n') {
+            if (currentCharacter === '\n' || (this.index + peekPos >= this.content.length)) {
                 return null;
             }
             buffer += currentCharacter;
-            if (currentCharacter === delimiter
-                && numberOfBackslashes == 0) {
+            if ((currentCharacter === delimiter  && numberOfBackslashes == 0)) {
                 var result = new Token(buffer, this.index);
                 this.skipChars(buffer.toString().length - 1);
                 return result;
             }
             numberOfBackslashes = currentCharacter === '\\' ? (numberOfBackslashes + 1) % 2
             : 0;
+            
         }
     }
 
@@ -563,12 +561,12 @@ class AS3Scanner {
             }
 
             if (level <= 0) {
-                return new Token(buffer.toString(), this.index);
+                return new Token(buffer.toString(), currentIndex, false, true);
             }
 
             for (; ;) {
                 currentCharacter = this.nextChar();
-                if (currentCharacter === '<' || this.index < this.content.length) {
+                if (currentCharacter === '<' || this.index >= this.content.length) {
                     break;
                 }
                 buffer += currentCharacter;

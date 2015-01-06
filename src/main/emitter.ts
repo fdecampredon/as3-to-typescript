@@ -144,6 +144,7 @@ visitors[NodeKind.NEW] = emitNew;
 visitors[NodeKind.RELATION] = emitRelation;
 visitors[NodeKind.OP] = emitOp;
 visitors[NodeKind.IDENTIFIER] = emitIdent;
+visitors[NodeKind.XML_LITERAL] = emitXMLLiteral;
 
 
 function visitNode(node: Node) {
@@ -488,6 +489,12 @@ function emitIdent(node: Node) {
     if (!def && state.currentClassName && globVars.indexOf(node.text) === -1) {
         insert('this.');
     }
+}
+
+function emitXMLLiteral(node: Node) {
+    catchup(node.start);
+    insert(JSON.stringify(node.text))
+    skipTo(node.end);
 }
 
 

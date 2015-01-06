@@ -2,7 +2,8 @@ class Token {
     constructor(
         public text: string, 
         public index: number, 
-        public isNumeric = false
+        public isNumeric = false,
+        public isXML = false
     ) {  }
     
     get end() {
