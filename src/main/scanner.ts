@@ -30,10 +30,9 @@
  */
 
 
-/// <reference path="../declarations/sax.d.ts" />
 
 import Token = require('./token');
-import sax = require('sax');
+var sax: any = require('sax');
 
 var END: string = '__END__';
 
@@ -568,7 +567,7 @@ class AS3Scanner {
 
             for (; ;) {
                 currentCharacter = this.nextChar();
-                if (currentCharacter === '<') {
+                if (currentCharacter === '<' || this.index < this.content.length) {
                     break;
                 }
                 buffer += currentCharacter;
