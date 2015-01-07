@@ -452,6 +452,9 @@ class AS3Parser {
         else if (this.tokIs(KeyWords.RETURN)) {
             result = this.parseReturnStatement();
         }
+        else if (this.tokIs(KeyWords.THROW)) {
+            result = this.parseThrowStatement();
+        }
         else if (this.tokIs(Operators.SEMI_COLUMN)) {
             result = this.parseEmptyStatement();
         }
@@ -1648,6 +1651,13 @@ class AS3Parser {
             this.skip(Operators.SEMI_COLUMN);
         }
         return result;
+    }
+    
+    private parseThrowStatement(): Node {
+        var tok = this.consume(KeyWords.THROW);
+        var expr = this.parseExpression();
+        
+        return  new Node(NodeKind.RETURN, tok.index, expr.end, null, [expr]);;
     }
 
     private parseShiftExpression(): Node {

@@ -38,6 +38,7 @@ var KeyWords = {
     PROTECTED : "protected",
     PUBLIC : "public",
     RETURN : "return",
+    THROW: "throw",
     SET : "set",
     STATIC : "static",
     SUPER : "super",
