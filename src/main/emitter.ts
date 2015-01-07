@@ -64,7 +64,7 @@ var globVars = [
     'Array',  'Boolean',  'decodeURI',  'decodeURIComponent',  'encodeURI',  'encodeURIComponent',  'escape',  
     'int',  'isFinite',  'isNaN',  'isXMLName',  'Number',  'Object',  
     'parseFloat', 'parseInt',  'String',  'trace',  'uint',  'unescape',  'Vector',  'XML',  'XMLList',
-    'ArgumentError',  'arguments',  'Class',  'Date',  'DefinitionError',  'Error',  'EvalError',  'Function',  'Math',  'Namespace',               'QName',  'RangeError',  'ReferenceError',  'RegExp',  'SecurityError',  'SyntaxError',  'TypeError',  'URIError',  'VerifyError'
+    'ArgumentError',  'arguments',  'Class',  'Date',  'DefinitionError',  'Error',  'EvalError',  'Function',  'Math',  'Namespace',                       'QName',  'RangeError',  'ReferenceError',  'RegExp',  'SecurityError',  'SyntaxError',  'TypeError',  'URIError',  'VerifyError'
 ];
 
 
@@ -148,6 +148,7 @@ visitors[NodeKind.RELATION] = emitRelation;
 visitors[NodeKind.OP] = emitOp;
 visitors[NodeKind.IDENTIFIER] = emitIdent;
 visitors[NodeKind.XML_LITERAL] = emitXMLLiteral;
+visitors[NodeKind.CONST_LIST] = emitConstList;
 
 
 function visitNode(node: Node) {
@@ -295,6 +296,14 @@ function emitSet(node: Node) {
     enterFunctionScope(node);
     visitNodes(node.getChildFrom(NodeKind.TYPE));
     exitScope();
+}
+
+function emitConstList(node: Node) {
+    catchup(node.start);
+    var nameTypeInit = node.findChild(NodeKind.NAME_TYPE_INIT);
+    skipTo(nameTypeInit.start);
+    insert('var ');
+    visitNode(nameTypeInit);
 }
 
 function emitMethod(node: Node) {
