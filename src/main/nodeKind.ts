@@ -94,6 +94,7 @@ var NodeKind = {
     VAR: "var",
     VAR_LIST: "var-list",
     VECTOR: "vector",
+    SHORT_VECTOR: "short_vector",
     VOID: "void",
     WHILE: "while",
     

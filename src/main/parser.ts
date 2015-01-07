@@ -210,6 +210,17 @@ class AS3Parser {
         }
         while (this.tok.text === NEW_LINE);
     }
+    
+    private tryParse<T>(func: () => T): T {
+        var tok = this.tok;
+        var checkPoint = this.scn.getCheckPoint();
+        try {
+            return func();
+        } catch(e) {
+            this.scn.rewind(checkPoint);
+            return null;
+        }
+    }
 
 
     /**
@@ -368,44 +379,45 @@ class AS3Parser {
      * @throws TokenException
      */
     private parsePrimaryExpression(): Node {
+        var result:Node;
+        
         if (this.tokIs(Operators.LEFT_SQUARE_BRACKET)) {
             return this.parseArrayLiteral();
-        }
-        else if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
+        } else if (this.tokIs(Operators.LEFT_CURLY_BRACKET)) {
             return this.parseObjectLiteral();
-        }
-        else if (this.tokIs(KeyWords.FUNCTION)) {
+        } else if (this.tokIs(KeyWords.FUNCTION)) {
             return this.parseLambdaExpression();
-        }
-        else if (this.tokIs(KeyWords.NEW)) {
+        } else if (this.tokIs(KeyWords.NEW)) {
             return this.parseNewExpression();
-        }
-        else if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
+        } else if (this.tokIs(Operators.LEFT_PARENTHESIS)) {
             return this.parseEncapsulatedExpression();
         } else if (this.tok.text === 'Vector') {
             return this.parseVector();
+        } else if (this.tokIs(Operators.INFERIOR)) {
+            var res = this.tryParse(() => this.parseShortVector());
+            if (res) {
+                return res;
+            }
         }
-        else {
-            var result:Node;
-            if (this.tok.text === '/' || this.tok.text === '/=') {
-                var tok = this.scn.scanRegExp();
-                if (tok) {
-                    this.nextToken(true);
-                    return new Node(NodeKind.LITERAL, tok.index, tok.end, tok.text)
-                }
+        
+        if (this.tok.text === '/' || this.tok.text === '/=') {
+            var tok = this.scn.scanRegExp();
+            if (tok) {
+                this.nextToken(true);
+                return new Node(NodeKind.LITERAL, tok.index, tok.end, tok.text)
             }
-            
-            if (this.tok.isXML) {
-                result = new Node(NodeKind.XML_LITERAL, this.tok.index, this.tok.end, this.tok.text);
-            }
-            else if (this.tok.isNumeric || /('|")/.test(this.tok.text[0])) {
-                result = new Node(NodeKind.LITERAL, this.tok.index, this.tok.end, this.tok.text);
-            } else {
-                result = new Node(NodeKind.IDENTIFIER,  this.tok.index, this.tok.end, this.tok.text);
-            }
-            this.nextToken(true);
-            return result;
         }
+
+        if (this.tok.isXML) {
+            result = new Node(NodeKind.XML_LITERAL, this.tok.index, this.tok.end, this.tok.text);
+        }
+        else if (this.tok.isNumeric || /('|")/.test(this.tok.text[0])) {
+            result = new Node(NodeKind.LITERAL, this.tok.index, this.tok.end, this.tok.text);
+        } else {
+            result = new Node(NodeKind.IDENTIFIER,  this.tok.index, this.tok.end, this.tok.text);
+        }
+        this.nextToken(true);
+        return result;
     }
 
     /**
@@ -1925,6 +1937,17 @@ class AS3Parser {
         result.end = this.consume(Operators.SUPERIOR).end;
 
         return result;
+    }
+    
+    private parseShortVector(): Node {
+        var vector: Node = new Node(NodeKind.VECTOR, this.tok.index, -1, "");
+        this.consume(Operators.INFERIOR);
+
+        vector.children.push(this.parseType());
+        vector.end = this.consume(Operators.SUPERIOR).end;
+        this.consume(Operators.LEFT_SQUARE_BRACKET)
+
+        return new Node(NodeKind.SHORT_VECTOR, vector.start, this.consume(Operators.RIGHT_SQUARE_BRACKET).end, null, [vector]);
     }
 
     /**

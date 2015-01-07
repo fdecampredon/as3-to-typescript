@@ -165,6 +165,15 @@ class AS3Scanner {
         return null;
     }
     
+    public getCheckPoint() {
+        return { index: this.index , inVector : this.inVector};
+    }
+    
+    public rewind(checkpoint: { index: number; inVector: boolean}): void {
+        this.index = checkpoint.index;
+        this.inVector = checkpoint.inVector;
+    }
+    
    
 
     private computePossibleMatchesMaxLength(possibleMatches: string[]): number {

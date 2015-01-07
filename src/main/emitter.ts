@@ -140,6 +140,7 @@ visitors[NodeKind.LAMBDA] = emitFunction;
 visitors[NodeKind.INTERFACE] = emitInterface;
 visitors[NodeKind.CLASS] = emitClass;
 visitors[NodeKind.VECTOR] = emitVector;
+visitors[NodeKind.SHORT_VECTOR] = emitShortVector;
 visitors[NodeKind.TYPE] = emitType;
 visitors[NodeKind.CALL] = emitCall;
 visitors[NodeKind.NEW] = emitNew;
@@ -393,6 +394,14 @@ function emitVector(node: Node) {
     } else {
         insert('any[]');
     }
+    skipTo(node.end);
+}
+
+function emitShortVector(node: Node) {
+    catchup(node.start);
+    insert('Array');
+    catchup(node.findChild(NodeKind.VECTOR).end);
+    insert('()');
     skipTo(node.end);
 }
 
