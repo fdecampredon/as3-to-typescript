@@ -328,7 +328,7 @@ function emitClassField(node: Node) {
         catchup(mods.start);
         mods.children.forEach(node => {
             catchup(node.start);
-            if (node.text !== 'private' && node.text !== 'public' && node.text !== 'static') {
+            if (node.text !== 'private' && node.text !== 'public' && node.text !== 'protected' && node.text !== 'static') {
                 commentNode(node, false);
             }  
             catchup(node.end);
