@@ -1,4 +1,4 @@
-#as3ToTypeScript
+#as3-to-typescript
 
 > A tool that helps porting as3 codebase to typescript
 
@@ -8,13 +8,13 @@
 Install this module with npm: 
 
 ```
-npm install -g as3ToTypescript
+npm install -g as3-to-typescript
 ```
 
 ##Usage
 
 ```
-as3ToTypescript <sourceDir> <outputDir>
+as3-to-typescript <sourceDir> <outputDir>
 ```
 
 ##Note

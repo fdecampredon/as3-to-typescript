@@ -1,10 +1,10 @@
 {
-  "name": "as3ToTypescript",
+  "name": "as3-to-typescript",
   "version": "0.1.0",
   "description": "convert as3 code base to typescript",
   "main": "index.js",
   "bin": {
-    "as3ToTypescript": "./bin/as3ToTypescript"
+    "as3-to-typescript": "./bin/as3-to-typescript"
   },
   "scripts": {
     "test": "node test/runner generate && node test/runner compare",
@@ -21,10 +21,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git://github.com/fdecampredon/as3ToTypescript.git"
+    "url": "git://github.com/fdecampredon/as3-to-typescript.git"
   },
   "bugs": {
-    "url": "https://github.com/fdecampredon/as3ToTypescript/issues"
+    "url": "https://github.com/fdecampredon/as3-to-typescript/issues"
   },
   "author": "François de Campredon <francois.de.campredon@gmail.com>",
   "licenses" : {

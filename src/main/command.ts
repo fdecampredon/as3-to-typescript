@@ -31,7 +31,7 @@ function readdir(dir: string, prefix = ''): string[] {
 }
 
 function displayHelp() {
-    console.log('usage: as3ToTypescript <sourceDir> <outputDir>');
+    console.log('usage: as3-to-typescript <sourceDir> <outputDir>');
 }
 
 export function run() {
