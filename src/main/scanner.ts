@@ -125,7 +125,7 @@ class AS3Scanner {
         } else if (currentCharacter === ':') {
             return this.scanCharacterSequence(currentCharacter, ['::']);
         } else if (currentCharacter === '*') {
-            return this.scanCharacterSequence(currentCharacter, []);
+            return this.scanCharacterSequence(currentCharacter, ['*=']);
         } else if (currentCharacter === '+') {
             return this.scanCharacterSequence(currentCharacter, ['++', '+=']);
         } else if (currentCharacter === '-') {
