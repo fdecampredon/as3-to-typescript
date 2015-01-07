@@ -91,6 +91,7 @@ var state: {
     currentClassName: string;
     scope: Scope;
     isNew: boolean;
+    emitThisForNextIdent: boolean;
     parentNode?: Node
 };
 
@@ -107,7 +108,8 @@ export function emit(ast: Node, source: string, options?: EmitterOptions) {
         index: 0,
         currentClassName: '',
         scope: null,
-        isNew: false
+        isNew: false,
+        emitThisForNextIdent: true
     }
     output = '';
     
@@ -397,6 +399,7 @@ function emitVector(node: Node) {
 function emitNew(node:Node) {
     catchup(node.start);
     state.isNew = true;
+    state.emitThisForNextIdent = false;
     visitNodes(node.children);
     state.isNew = false;
 }
@@ -486,9 +489,10 @@ function emitIdent(node: Node) {
     if (def && def.bound) {
         insert(def.bound + '.');
     }
-    if (!def && state.currentClassName && globVars.indexOf(node.text) === -1) {
+    if (!def && state.currentClassName && globVars.indexOf(node.text) === -1 && state.emitThisForNextIdent && node.text !== state.currentClassName) {
         insert('this.');
     }
+    state.emitThisForNextIdent = true;
 }
 
 function emitXMLLiteral(node: Node) {
@@ -520,7 +524,9 @@ function enterClassScope(contentsNode: Node[]) {
             return null;
         }
         found[nameNode.text] = true;
-
+        if (nameNode.text === state.currentClassName) {
+            return;
+        }
         var modList = node.findChild(NodeKind.MOD_LIST);
         var isStatic = modList && 
             modList.children.some(mod => mod.text === 'static');
