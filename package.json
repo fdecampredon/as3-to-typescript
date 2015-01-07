@@ -17,10 +17,20 @@
     "actionscript",
     "as3",
     "typescript",
-    "crosscompiler"
+    "compiler"
   ],
-  "author": "François de Campredon",
-  "license": "Apache Licence V2",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/fdecampredon/as3ToTypescript.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fdecampredon/as3ToTypescript/issues"
+  },
+  "author": "François de Campredon <francois.de.campredon@gmail.com>",
+  "licenses" : {
+    "type": "Apache",
+    "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+  },
   "dependencies": {
     "fs-extended": "^0.2.0",
     "rimraf": "^2.2.8",
