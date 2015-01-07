@@ -125,7 +125,12 @@ class AS3Scanner {
         } else if (currentCharacter === ':') {
             return this.scanCharacterSequence(currentCharacter, ['::']);
         } else if (currentCharacter === '*') {
-            return this.scanCharacterSequence(currentCharacter, ['*=']);
+            //UGLY HACK but .... seems working
+            if(this.getPreviousCharacter() !== ':' ) {
+                return this.scanCharacterSequence(currentCharacter, ['*=']);
+            } else {
+                return new Token('*', this.index);
+            }
         } else if (currentCharacter === '+') {
             return this.scanCharacterSequence(currentCharacter, ['++', '+=']);
         } else if (currentCharacter === '-') {
