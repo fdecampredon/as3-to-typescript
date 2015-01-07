@@ -1942,12 +1942,12 @@ class AS3Parser {
     private parseShortVector(): Node {
         var vector: Node = new Node(NodeKind.VECTOR, this.tok.index, -1, "");
         this.consume(Operators.INFERIOR);
-
         vector.children.push(this.parseType());
         vector.end = this.consume(Operators.SUPERIOR).end;
-        this.consume(Operators.LEFT_SQUARE_BRACKET)
-
-        return new Node(NodeKind.SHORT_VECTOR, vector.start, this.consume(Operators.RIGHT_SQUARE_BRACKET).end, null, [vector]);
+        
+        var arrayLiteral = this.parseArrayLiteral()
+        
+        return new Node(NodeKind.SHORT_VECTOR, vector.start, arrayLiteral.end, null, [vector, arrayLiteral]);
     }
 
     /**

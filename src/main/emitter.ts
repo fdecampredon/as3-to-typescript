@@ -399,9 +399,23 @@ function emitVector(node: Node) {
 
 function emitShortVector(node: Node) {
     catchup(node.start);
+    var vector = node.findChild(NodeKind.VECTOR);
     insert('Array');
-    catchup(node.findChild(NodeKind.VECTOR).end);
-    insert('()');
+    var type = vector.findChild(NodeKind.TYPE);
+    if(type) {
+        emitType(type);
+    } else {
+        insert('any');
+    }
+    catchup(vector.end);
+    insert('(');
+    var arrayLiteral = node.findChild(NodeKind.ARRAY)
+    if (arrayLiteral.children && arrayLiteral.children.length) {
+        skipTo(arrayLiteral.children[0].start)
+        visitNodes(arrayLiteral.children)
+        catchup(arrayLiteral.lastChild.end);
+    }
+    insert(')');
     skipTo(node.end);
 }
 
