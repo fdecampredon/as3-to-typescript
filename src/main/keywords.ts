@@ -2,10 +2,12 @@
 
 var KeyWords = {
     AS : "as",
+    BREAK: "break",
     CASE : "case",
     CATCH : "catch",
     CLASS : "class",
     CONST : "const",
+    CONTINUE: "continue",
     DEFAULT : "default",
     DELETE : "delete",
     DO : "do",

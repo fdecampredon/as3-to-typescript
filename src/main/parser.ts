@@ -467,6 +467,9 @@ class AS3Parser {
         else if (this.tokIs(KeyWords.THROW)) {
             result = this.parseThrowStatement();
         }
+        else if (this.tokIs(KeyWords.BREAK) || this.tokIs(KeyWords.CONTINUE)) {
+            result = this.parseBreakOrContinueStatement();
+        }
         else if (this.tokIs(Operators.SEMI_COLUMN)) {
             result = this.parseEmptyStatement();
         }
@@ -1670,6 +1673,47 @@ class AS3Parser {
         var expr = this.parseExpression();
         
         return  new Node(NodeKind.RETURN, tok.index, expr.end, null, [expr]);;
+    }
+    
+    private parseBreakOrContinueStatement(): Node {
+        var tok: Token = this.tok;
+        var kind: string;
+        if (this.tokIs(KeyWords.BREAK) || this.tokIs(KeyWords.CONTINUE)) {
+            kind = this.tokIs(KeyWords.BREAK)? NodeKind.BREAK : NodeKind.CONTINUE;
+            this.nextToken();
+        } else {
+            var pos = getLineAndCharacterFromPosition(this.tok.index, this.lineMap);
+            throw new Error('unexpected token : ' +
+                this.tok.text + '(' + pos.line + ',' + pos.col + ')' +
+                ' in file ' + this.fileName +
+                'expected: continue or break'
+            );
+        }
+        var result: Node;
+        if (this.tokIs(NEW_LINE) || this.tokIs(Operators.SEMI_COLUMN)) {
+            this.nextToken(true);
+            result = new Node(kind, tok.index, tok.end, "");
+        } else {
+            var ident = this.tryParse(() => {
+                var expr = this.parsePrimaryExpression();
+                if (expr.kind === NodeKind.IDENTIFIER) {
+                    return expr;
+                } else {
+                    throw new Error();
+                }
+            })
+            if (!ident) {
+                var pos = getLineAndCharacterFromPosition(this.tok.index, this.lineMap);
+                throw new Error('unexpected token : ' +
+                    this.tok.text + '(' + pos.line + ',' + pos.col + ')' +
+                    ' in file ' + this.fileName +
+                    'expected: ident'
+                );
+            }
+            result = new Node(kind, tok.index, ident.end, null, [ident]);
+        }
+        this.skip(Operators.SEMI_COLUMN);
+        return result;
     }
 
     private parseShiftExpression(): Node {
