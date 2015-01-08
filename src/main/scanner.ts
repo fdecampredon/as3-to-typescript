@@ -162,6 +162,20 @@ class AS3Scanner {
     public scanRegExp(): Token {
         var currentIndex = this.index;
         var token: Token = this.scanUntilDelimiter('/');
+        var peekPos = 1;
+        var flagBuffer = '';
+        for (;;) {
+            var currentCharacter: string = this.peekChar(peekPos++);
+            if (/[a-z]/.test(currentCharacter)) {
+                flagBuffer += currentCharacter;
+            } else {
+                break;
+            }
+        }
+        if (flagBuffer.length) {
+            token.text += flagBuffer;
+            this.index += flagBuffer.length
+        }
         if (token != null  && this.isValidRegExp(token.text)) {
             return token;
         } else {
