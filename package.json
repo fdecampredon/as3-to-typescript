@@ -1,6 +1,6 @@
 {
   "name": "as3-to-typescript",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "convert as3 code base to typescript",
   "main": "index.js",
   "bin": {
